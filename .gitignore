@@ -97,3 +97,16 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+# === FMOD ===
+# 忽略本地编辑器缓存
+/[Aa]ssets/Plugins/FMOD/Cache/*
+
+# 保护原生库不被其他规则误杀
+!/[Aa]ssets/Plugins/FMOD/**/lib/*
+
+# 忽略 StreamingAssets 中的 bank（如果你用 Resources 方式部署）
+/[Aa]ssets/StreamingAssets/**/*.bank
+/[Aa]ssets/StreamingAssets/**/*.bank.meta
+
+# 忽略编辑器日志
+fmod_editor.log
