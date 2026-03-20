@@ -65,8 +65,6 @@ namespace Player
             if (playerAnim != null)
             {
                 playerAnim.SetBool("IsMoving", isMoving);
-                // 也可以添加一个 Speed 参数作为备份，有些状态机用 Float 判定
-                playerAnim.SetFloat("Speed", moveInput.magnitude);
             }
 
             // 处理翻转：只有在水平移动时才改变缩放

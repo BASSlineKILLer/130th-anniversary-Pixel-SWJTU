@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc2ebebec7f555d42a8c7cce915a81c3, type: 3}
+  m_Name: NPCDatabase
+  m_EditorClassIdentifier: 
+  manualEntries:
+  - {fileID: 11400000, guid: 0b0d39055713d77499914553584e6ccb, type: 2}
+  - {fileID: 11400000, guid: 0fdf67bb73ed8f94cb39923d1a7ab06e, type: 2}
+  - {fileID: 11400000, guid: 4a4051b11ed5edb4e92aa80a4eecafbe, type: 2}
+  enableApiFetch: 1
+  apiUrl: http://devshowcase.site/api/approved
