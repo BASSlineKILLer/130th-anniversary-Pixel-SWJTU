@@ -6,21 +6,21 @@ using UnityEngine;
 /// 职责：
 ///   - 显示解码后的 Sprite
 ///   - 根据 Sprite 实际大小自动调整 Collider 和气泡位置
-///   - 玩家靠近时显示提示气泡，离开时隐藏
+///   - 提供 ShowBubble / HideBubble 供 NPCInteraction 统一管理
 ///   - 保存 NPCInfo 供对话系统读取
 ///
 /// 【Prefab 结构】放在 Resources/NPCData/NPC.prefab
 /// NPC
 ///   ├─ SpriteRenderer
 ///   ├─ BoxCollider2D (Trigger，脚本自动调整大小)
-///   └─ Bubble  ← 子物体，提示气泡（SpriteRenderer 贴气泡图）
+///   └─ Bubble  ← 子物体，提示气泡
 /// </summary>
 [RequireComponent(typeof(SpriteRenderer))]
 [RequireComponent(typeof(BoxCollider2D))]
 public class NPCController : MonoBehaviour
 {
     [Header("提示气泡")]
-    [Tooltip("气泡子物体，玩家靠近显示，离开隐藏")]
+    [Tooltip("气泡子物体")]
     public GameObject bubbleRoot;
     [Tooltip("气泡相对于 Sprite 顶部的额外偏移")]
     public Vector3 bubbleOffset = new Vector3(0f, 0.3f, 0f);
@@ -64,6 +64,24 @@ public class NPCController : MonoBehaviour
     }
 
     /// <summary>
+    /// 显示气泡（由 NPCInteraction 调用）
+    /// </summary>
+    public void ShowBubble()
+    {
+        if (bubbleRoot != null && !bubbleRoot.activeSelf)
+            bubbleRoot.SetActive(true);
+    }
+
+    /// <summary>
+    /// 隐藏气泡（由 NPCInteraction 调用）
+    /// </summary>
+    public void HideBubble()
+    {
+        if (bubbleRoot != null && bubbleRoot.activeSelf)
+            bubbleRoot.SetActive(false);
+    }
+
+    /// <summary>
     /// 根据 Sprite 实际世界尺寸自动调整 Collider 和气泡位置
     /// </summary>
     private void AdjustColliderAndBubble()
@@ -83,21 +101,5 @@ public class NPCController : MonoBehaviour
         {
             bubbleRoot.transform.localPosition = new Vector3(0f, spriteH, 0f) + bubbleOffset;
         }
-    }
-
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (!other.CompareTag("Player")) return;
-
-        if (bubbleRoot != null)
-            bubbleRoot.SetActive(true);
-    }
-
-    private void OnTriggerExit2D(Collider2D other)
-    {
-        if (!other.CompareTag("Player")) return;
-
-        if (bubbleRoot != null)
-            bubbleRoot.SetActive(false);
     }
 }

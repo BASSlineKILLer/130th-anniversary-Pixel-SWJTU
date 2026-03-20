@@ -1,136 +1,302 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI; //用于 Image 组件
-using TMPro; //用于 TextMeshPro 组件
+using UnityEngine.UI;
+using TMPro;
+using SWJTUGame.UI;
 
+/// <summary>
+/// NPC 对话交互系统（挂在 Player 上）
+///
+/// 功能：
+///   - 自动检测附近 NPC，只对最近的一个显示气泡
+///   - 按 E 打开对话框：左侧立绘、右上 username、右下 message（打字机逐字显示）
+///   - 打字中按 E / 点击屏幕 → 立即显示全文
+///   - 全文显示后按 E / 点击屏幕 → 关闭对话
+///   - 对话期间角色不能移动（通过 GameManager.PauseGame）
+///
+/// 【对话框 Prefab 结构】
+/// DialoguePanel (Image - 对话框.png 背景, CanvasGroup)
+///   ├─ PortraitImage   (Image - 左侧 NPC 立绘, preserveAspect)
+///   ├─ NameText        (TextMeshProUGUI - 右上角 username)
+///   └─ MessageText     (TextMeshProUGUI - 右下方 message)
+/// </summary>
 public class NPCInteraction : MonoBehaviour
 {
-    [Header("UI设置")]
-    [Tooltip("对话框的整个面板对象")]
-    public GameObject dialoguePanel;
-    
-    [Tooltip("对话框左边显示NPC立绘的Image")]
+    [Header("对话框 UI")]
+    [Tooltip("对话框面板（需要 CanvasGroup 组件用于淡入淡出）")]
+    public CanvasGroup dialogueCanvasGroup;
+
+    [Tooltip("左侧 NPC 立绘")]
     public Image npcPortraitImage;
-    
-    [Tooltip("对话框右边显示文字的组件 (使用 TextMeshProUGUI)")]
-    public TextMeshProUGUI npcDialogueText;
+
+    [Tooltip("右上角 NPC 名字")]
+    public TextMeshProUGUI npcNameText;
+
+    [Tooltip("右下方 NPC 说的话")]
+    public TextMeshProUGUI npcMessageText;
+
+    [Header("打字机设置")]
+    [Tooltip("每个字符显示的间隔（秒）")]
+    public float typeSpeed = 0.05f;
+
+    [Header("动画设置")]
+    [Tooltip("对话框淡入淡出时长")]
+    public float fadeDuration = 0.15f;
 
     [Header("交互设置")]
     public KeyCode interactKey = KeyCode.E;
 
-    // 当前范围内可交互的 NPC
-    private NPCController currentNPC;
-    // 是否正在对话中
-    private bool isDialoguing = false;
+    // ===== 状态 =====
+    private enum DialogueState { Idle, Typing, Waiting }
+    private DialogueState state = DialogueState.Idle;
 
-    void Start()
+    // 附近的 NPC 集合
+    private HashSet<NPCController> nearbyNPCs = new HashSet<NPCController>();
+    // 当前最近的 NPC（显示气泡的那个）
+    private NPCController closestNPC;
+    // 当前正在对话的 NPC
+    private NPCController dialogueNPC;
+
+    // 打字机协程引用
+    private Coroutine typewriterCoroutine;
+
+    private void Start()
     {
-        // 游戏开始时隐藏对话框
-        if (dialoguePanel != null)
+        if (dialogueCanvasGroup != null)
         {
-            dialoguePanel.SetActive(false);
+            dialogueCanvasGroup.alpha = 0f;
+            dialogueCanvasGroup.interactable = false;
+            dialogueCanvasGroup.blocksRaycasts = false;
+            dialogueCanvasGroup.gameObject.SetActive(false);
         }
     }
 
-    void Update()
+    private void Update()
     {
-        // 检测交互按键
-        if (Input.GetKeyDown(interactKey))
+        // 1. 每帧更新最近 NPC 气泡（对话中不切换气泡）
+        if (state == DialogueState.Idle)
+            UpdateClosestNPC();
+
+        // 2. 处理交互输入
+        bool inputTriggered = Input.GetKeyDown(interactKey) || Input.GetMouseButtonDown(0);
+
+        switch (state)
         {
-            if (isDialoguing)
-            {
-                CloseDialogue();
-            }
-            else if (currentNPC != null)
-            {
-                OpenDialogue();
-            }
+            case DialogueState.Idle:
+                // 只有按 E 才能开启对话（不响应鼠标点击，避免误触）
+                if (Input.GetKeyDown(interactKey) && closestNPC != null)
+                    OpenDialogue(closestNPC);
+                break;
+
+            case DialogueState.Typing:
+                if (inputTriggered)
+                    SkipTypewriter();
+                break;
+
+            case DialogueState.Waiting:
+                if (inputTriggered)
+                    CloseDialogue();
+                break;
         }
     }
+
+    // ==================== 最近 NPC 检测 ====================
 
     /// <summary>
-    /// 打开对话框并显示内容
+    /// 每帧找出最近的 NPC，只对它显示气泡
     /// </summary>
-    private void OpenDialogue()
+    private void UpdateClosestNPC()
     {
-        if (currentNPC == null || currentNPC.Info == null) return;
+        NPCController nearest = null;
+        float minDist = float.MaxValue;
+        Vector3 myPos = transform.position;
 
-        isDialoguing = true;
-        dialoguePanel.SetActive(true);
+        // 清理已销毁的 NPC
+        nearbyNPCs.RemoveWhere(n => n == null);
 
-        // 1. 设置左边的立绘
-        if (npcPortraitImage != null)
+        foreach (var npc in nearbyNPCs)
         {
-            if (currentNPC.Info.Sprite != null)
+            float dist = Vector2.Distance(myPos, npc.transform.position);
+            if (dist < minDist)
             {
-                npcPortraitImage.sprite = currentNPC.Info.Sprite;
-                npcPortraitImage.gameObject.SetActive(true);
-            }
-            else
-            {
-                // 如果没有立绘，选择隐藏 Image 还是显示默认图片？这里先隐藏
-                npcPortraitImage.gameObject.SetActive(false);
+                minDist = dist;
+                nearest = npc;
             }
         }
 
-        // 2. 设置右边的文字
-        if (npcDialogueText != null)
+        if (nearest != closestNPC)
         {
-            // 格式： 名字: 消息
-            // 或者你可以根据需求只显示消息
-            npcDialogueText.text = $"<color=yellow>{currentNPC.Info.Username}</color>:\n{currentNPC.Info.Message}";
-        }
+            // 旧的隐藏气泡
+            if (closestNPC != null)
+                closestNPC.HideBubble();
 
-        // 3. 暂停游戏（禁止玩家移动）
+            closestNPC = nearest;
+
+            // 新的显示气泡
+            if (closestNPC != null)
+                closestNPC.ShowBubble();
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        var npc = other.GetComponent<NPCController>();
+        if (npc != null)
+            nearbyNPCs.Add(npc);
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        var npc = other.GetComponent<NPCController>();
+        if (npc == null) return;
+
+        nearbyNPCs.Remove(npc);
+
+        // 如果离开的是正在对话的 NPC，强制关闭
+        if (npc == dialogueNPC && state != DialogueState.Idle)
+            CloseDialogue();
+
+        // 如果离开的是显示气泡的 NPC，立刻切换
+        if (npc == closestNPC)
+        {
+            npc.HideBubble();
+            closestNPC = null;
+        }
+    }
+
+    // ==================== 对话控制 ====================
+
+    private void OpenDialogue(NPCController npc)
+    {
+        if (npc == null || npc.Info == null) return;
+
+        dialogueNPC = npc;
+
+        // 隐藏气泡（对话中不需要气泡）
+        npc.HideBubble();
+
+        // 设置 UI 内容
+        SetPortrait(npc.Info.Sprite);
+        SetName(npc.Info.Username);
+
+        // 暂停游戏（角色不能移动）
         if (GameManager.Instance != null)
-        {
             GameManager.Instance.PauseGame();
-        }
+
+        // 淡入面板
+        StartCoroutine(ShowDialoguePanel(npc.Info.Message));
     }
 
-    /// <summary>
-    /// 关闭对话框
-    /// </summary>
+    private IEnumerator ShowDialoguePanel(string message)
+    {
+        // 淡入
+        yield return StartCoroutine(UIAnimationHelper.FadeIn(dialogueCanvasGroup, fadeDuration));
+
+        // 开始打字机
+        state = DialogueState.Typing;
+        typewriterCoroutine = StartCoroutine(TypewriterRoutine(message));
+    }
+
     private void CloseDialogue()
     {
-        isDialoguing = false;
-        if (dialoguePanel != null)
+        // 停止打字机
+        if (typewriterCoroutine != null)
         {
-            dialoguePanel.SetActive(false);
+            StopCoroutine(typewriterCoroutine);
+            typewriterCoroutine = null;
         }
+
+        state = DialogueState.Idle;
+        dialogueNPC = null;
+
+        // 淡出面板
+        StartCoroutine(HideDialoguePanel());
+    }
+
+    private IEnumerator HideDialoguePanel()
+    {
+        yield return StartCoroutine(UIAnimationHelper.FadeOut(dialogueCanvasGroup, fadeDuration));
 
         // 恢复游戏
         if (GameManager.Instance != null)
-        {
             GameManager.Instance.ResumeGame();
-        }
     }
 
-    // 当进入 NPC 的 Trigger 范围时
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        // 检查碰到的物体是否有 NPCController 组件
-        NPCController npc = other.GetComponent<NPCController>();
-        if (npc != null)
-        {
-            currentNPC = npc;
-            // 这里可以加一些 UI 提示，比如 "按 E 交互"
-        }
-    }
+    // ==================== 打字机效果 ====================
 
-    // 当离开 NPC 的 Trigger 范围时
-    private void OnTriggerExit2D(Collider2D other)
+    /// <summary>
+    /// 逐字显示 message。使用 TMP 的 maxVisibleCharacters。
+    /// 因为对话时 timeScale=0，用 Time.unscaledDeltaTime 驱动。
+    /// </summary>
+    private IEnumerator TypewriterRoutine(string message)
     {
-        NPCController npc = other.GetComponent<NPCController>();
-        if (npc != null && npc == currentNPC)
+        npcMessageText.text = message;
+        npcMessageText.ForceMeshUpdate();
+
+        int totalChars = npcMessageText.textInfo.characterCount;
+        npcMessageText.maxVisibleCharacters = 0;
+
+        for (int i = 0; i < totalChars; i++)
         {
-            // 如果正在对话中，强制关闭
-            if (isDialoguing)
+            npcMessageText.maxVisibleCharacters = i + 1;
+
+            // 等待 typeSpeed 秒（unscaled）
+            float elapsed = 0f;
+            while (elapsed < typeSpeed)
             {
-                CloseDialogue();
+                elapsed += Time.unscaledDeltaTime;
+                yield return null;
             }
-            currentNPC = null;
         }
+
+        // 打字完成
+        typewriterCoroutine = null;
+        state = DialogueState.Waiting;
+    }
+
+    /// <summary>
+    /// 跳过打字，立即显示全文
+    /// </summary>
+    private void SkipTypewriter()
+    {
+        if (typewriterCoroutine != null)
+        {
+            StopCoroutine(typewriterCoroutine);
+            typewriterCoroutine = null;
+        }
+
+        // 显示全部文字
+        if (npcMessageText != null)
+        {
+            npcMessageText.ForceMeshUpdate();
+            npcMessageText.maxVisibleCharacters = npcMessageText.textInfo.characterCount;
+        }
+
+        state = DialogueState.Waiting;
+    }
+
+    // ==================== UI 设置 ====================
+
+    private void SetPortrait(Sprite sprite)
+    {
+        if (npcPortraitImage == null) return;
+
+        if (sprite != null)
+        {
+            npcPortraitImage.sprite = sprite;
+            npcPortraitImage.preserveAspect = true;
+            npcPortraitImage.gameObject.SetActive(true);
+        }
+        else
+        {
+            npcPortraitImage.gameObject.SetActive(false);
+        }
+    }
+
+    private void SetName(string username)
+    {
+        if (npcNameText != null)
+            npcNameText.text = string.IsNullOrEmpty(username) ? "???" : username;
     }
 }
