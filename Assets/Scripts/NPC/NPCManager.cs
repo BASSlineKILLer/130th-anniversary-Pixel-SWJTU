@@ -3,7 +3,9 @@ using UnityEngine;
 
 /// <summary>
 /// NPC 管理器（单例）
-/// 负责从 API 拉取数据 → 批量生成 NPC → 增量更新
+///
+/// NPC Prefab 从 Resources/NPCData/NPC 加载，不需要在场景中预先放置 Prefab 实例。
+/// 场景中只需一个挂载此脚本的空物体，配好 spawnPoints 即可。
 /// </summary>
 public class NPCManager : MonoBehaviour
 {
@@ -14,20 +16,18 @@ public class NPCManager : MonoBehaviour
     public string apiUrl = "http://devshowcase.site/api/approved";
 
     [Header("NPC 生成配置")]
-    [Tooltip("NPC 预制体，需挂载 NPCController")]
-    public GameObject npcPrefab;
-    [Tooltip("NPC 父容器（保持 Hierarchy 整洁）")]
-    public Transform npcParent;
-    [Tooltip("预定义的 NPC 生成点位，按顺序分配")]
+    [Tooltip("NPC Prefab 在 Resources 中的路径（不含扩展名）")]
+    public string npcPrefabPath = "NPCData/NPC";
+    [Tooltip("预定义生成点位")]
     public List<Transform> spawnPoints = new List<Transform>();
 
     [Header("状态（只读）")]
     [SerializeField] private int loadedCount;
     [SerializeField] private bool isLoading;
 
-    // 已生成的 NPC，按 id 跟踪，防止重复
+    private GameObject npcPrefab;
+    private Transform npcParent;
     private Dictionary<int, GameObject> spawnedNPCs = new Dictionary<int, GameObject>();
-    // 下一个可用的点位索引
     private int nextSpawnIndex;
 
     private void Awake()
@@ -38,29 +38,37 @@ public class NPCManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        // 从 Resources 加载 NPC Prefab，无需场景中拖引用
+        npcPrefab = Resources.Load<GameObject>(npcPrefabPath);
+        if (npcPrefab == null)
+            Debug.LogError($"[NPCManager] 找不到 Prefab: Resources/{npcPrefabPath}。请把 NPC.prefab 放到 Assets/Resources/NPCData/ 下");
+
+        // 自动创建容器
+        npcParent = new GameObject("NPCs").transform;
+        npcParent.SetParent(transform);
     }
 
     private void Start()
     {
-        // 计算已被占用的点位数量（场景可能有预置 NPC）
         nextSpawnIndex = 0;
         FetchAndSpawnNPCs();
     }
 
     /// <summary>
-    /// 触发 API 请求 → 解码 → 批量生成  (可由外部调用刷新)
+    /// 触发加载/刷新。可由外部调用。
     /// </summary>
     public void FetchAndSpawnNPCs()
     {
         if (isLoading)
         {
-            Debug.LogWarning("[NPCManager] 正在加载中，忽略重复请求");
+            Debug.LogWarning("[NPCManager] 正在加载，忽略重复请求");
             return;
         }
 
         if (npcPrefab == null)
         {
-            Debug.LogError("[NPCManager] npcPrefab 未设置！请在 Inspector 中拖入 NPC 预制体");
+            Debug.LogError("[NPCManager] NPC Prefab 未加载！请检查 Resources 路径");
             return;
         }
 
@@ -71,21 +79,30 @@ public class NPCManager : MonoBehaviour
     private void OnFetchSuccess(List<NPCInfo> npcList)
     {
         isLoading = false;
-        Debug.Log($"[NPCManager] 获取到 {npcList.Count} 个 NPC");
+        Debug.Log($"[NPCManager] 收到 {npcList.Count} 个 NPC 数据");
 
         int newCount = 0;
         foreach (var info in npcList)
         {
-            // 增量更新：跳过已存在的 NPC
             if (spawnedNPCs.ContainsKey(info.Id))
+            {
+                // 已存在：更新数据（网络可能返回了更新的 Sprite）
+                var existing = spawnedNPCs[info.Id];
+                if (existing != null)
+                {
+                    var ctrl = existing.GetComponent<NPCController>();
+                    if (ctrl != null) ctrl.SetData(info);
+                }
                 continue;
+            }
 
             if (SpawnNPC(info))
                 newCount++;
         }
 
         loadedCount = spawnedNPCs.Count;
-        Debug.Log($"[NPCManager] 本次新增 {newCount} 个 NPC，总计 {loadedCount} 个");
+        if (newCount > 0)
+            Debug.Log($"[NPCManager] 新增 {newCount} 个 NPC, 总计 {loadedCount} 个");
     }
 
     private void OnFetchError(string error)
@@ -94,35 +111,30 @@ public class NPCManager : MonoBehaviour
         Debug.LogError($"[NPCManager] {error}");
     }
 
-    /// <summary>
-    /// 在下一个可用点位生成单个 NPC
-    /// </summary>
     private bool SpawnNPC(NPCInfo info)
     {
-        Vector3 pos;
+        Vector3 pos = Vector3.zero;
 
-        if (spawnPoints.Count > 0 && nextSpawnIndex < spawnPoints.Count)
+        if (nextSpawnIndex < spawnPoints.Count)
         {
-            // 使用预定义点位
             Transform point = spawnPoints[nextSpawnIndex];
-            pos = point != null ? point.position : Vector3.zero;
+            if (point != null)
+                pos = point.position;
         }
         else
         {
-            // 点位用完了，给出警告
-            Debug.LogWarning($"[NPCManager] 预定义点位已用完 (已用 {nextSpawnIndex}/{spawnPoints.Count})，NPC(id={info.Id}) 将生成在原点");
-            pos = Vector3.zero;
+            Debug.LogWarning($"[NPCManager] 点位用完 ({nextSpawnIndex}/{spawnPoints.Count}), NPC(id={info.Id}) 生成在原点");
         }
 
         GameObject go = Instantiate(npcPrefab, pos, Quaternion.identity, npcParent);
-        NPCController controller = go.GetComponent<NPCController>();
+        var controller = go.GetComponent<NPCController>();
         if (controller != null)
         {
             controller.SetData(info);
         }
         else
         {
-            Debug.LogError("[NPCManager] NPC 预制体上缺少 NPCController 组件！");
+            Debug.LogError("[NPCManager] Prefab 缺少 NPCController！");
         }
 
         spawnedNPCs[info.Id] = go;
@@ -130,9 +142,6 @@ public class NPCManager : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// 清除场景中所有已生成的 NPC
-    /// </summary>
     public void ClearAllNPCs()
     {
         foreach (var kvp in spawnedNPCs)

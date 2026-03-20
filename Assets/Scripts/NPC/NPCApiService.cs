@@ -1,84 +1,141 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
+using Debug = UnityEngine.Debug;
 
 /// <summary>
-/// NPC API 服务：HTTP 请求、JSON 解析、Base64 解码、本地图片缓存
+/// NPC API 服务：HTTP 请求、JSON 解析、Base64 解码
+/// 双层缓存：JSON 响应缓存（秒加载） + 图片 PNG 缓存（避免重复解码）
 /// </summary>
 public static class NPCApiService
 {
-    private static string CacheDir => Path.Combine(Application.persistentDataPath, "NPCImageCache");
+    private static string CacheDir => Path.Combine(Application.persistentDataPath, "NPCCache");
+    private static string ImageCacheDir => Path.Combine(CacheDir, "Images");
+    private static string JsonCachePath => Path.Combine(CacheDir, "api_response.json");
+
+    // NPC 角色图的 pixelsPerUnit，值越小场景中越大
+    // 32x32 像素图 → pixelsPerUnit=32 → 场景中 1 个单位大小
+    public const float DefaultPixelsPerUnit = 32f;
 
     /// <summary>
-    /// 从 API 获取已审核通过的 NPC 列表，解码图片并返回 NPCInfo 列表
+    /// 获取 NPC 列表。策略：先从本地 JSON 缓存秒加载，再后台请求 API 更新。
+    /// onSuccess 可能被调用两次（缓存一次 + 网络一次）。
     /// </summary>
     public static IEnumerator FetchNPCs(string url, Action<List<NPCInfo>> onSuccess, Action<string> onError)
     {
-        using (UnityWebRequest req = UnityWebRequest.Get(url))
+        var totalSw = Stopwatch.StartNew();
+
+        // ===== 阶段 1：本地 JSON 缓存快速加载 =====
+        bool cacheLoaded = false;
+        if (File.Exists(JsonCachePath))
         {
-            yield return req.SendWebRequest();
-
-            if (req.result != UnityWebRequest.Result.Success)
-            {
-                onError?.Invoke($"HTTP 请求失败: {req.error}");
-                yield break;
-            }
-
-            NPCApiResponse response;
+            var cacheSw = Stopwatch.StartNew();
             try
             {
-                response = JsonUtility.FromJson<NPCApiResponse>(req.downloadHandler.text);
+                string cachedJson = File.ReadAllText(JsonCachePath);
+                NPCApiResponse cachedResponse = JsonUtility.FromJson<NPCApiResponse>(cachedJson);
+                if (cachedResponse != null && cachedResponse.success && cachedResponse.data != null)
+                {
+                    var cacheResults = DecodeNPCList(cachedResponse.data);
+                    cacheSw.Stop();
+                    Debug.Log($"[NPC] 缓存加载: {cacheResults.Count} 个 NPC, 耗时 {cacheSw.ElapsedMilliseconds}ms");
+                    onSuccess?.Invoke(cacheResults);
+                    cacheLoaded = true;
+                }
             }
             catch (Exception e)
             {
-                onError?.Invoke($"JSON 解析失败: {e.Message}");
+                Debug.LogWarning($"[NPC] 缓存读取失败，将从网络加载: {e.Message}");
+            }
+        }
+
+        // ===== 阶段 2：网络请求 =====
+        var httpSw = Stopwatch.StartNew();
+        using (UnityWebRequest req = UnityWebRequest.Get(url))
+        {
+            yield return req.SendWebRequest();
+            httpSw.Stop();
+
+            if (req.result != UnityWebRequest.Result.Success)
+            {
+                string msg = $"HTTP 请求失败 ({httpSw.ElapsedMilliseconds}ms): {req.error}";
+                Debug.LogWarning($"[NPC] {msg}");
+                if (!cacheLoaded)
+                    onError?.Invoke(msg);
+                yield break;
+            }
+
+            Debug.Log($"[NPC] HTTP 请求完成: {httpSw.ElapsedMilliseconds}ms, {req.downloadHandler.text.Length} 字符");
+
+            string json = req.downloadHandler.text;
+            NPCApiResponse response;
+            try
+            {
+                response = JsonUtility.FromJson<NPCApiResponse>(json);
+            }
+            catch (Exception e)
+            {
+                if (!cacheLoaded)
+                    onError?.Invoke($"JSON 解析失败: {e.Message}");
                 yield break;
             }
 
             if (response == null || !response.success || response.data == null)
             {
-                onError?.Invoke("API 返回数据无效或 success=false");
+                if (!cacheLoaded)
+                    onError?.Invoke("API 返回数据无效或 success=false");
                 yield break;
             }
 
-            var results = new List<NPCInfo>();
-            foreach (var raw in response.data)
-            {
-                Sprite sprite = LoadCachedSprite(raw.id);
-                if (sprite == null && !string.IsNullOrEmpty(raw.image))
-                {
-                    sprite = Base64ToSprite(raw.image);
-                    if (sprite != null)
-                        SaveSpriteToCache(raw.id, sprite.texture);
-                }
+            // 保存 JSON 缓存供下次秒加载
+            SaveJsonCache(json);
 
-                results.Add(new NPCInfo
-                {
-                    Id = raw.id,
-                    Username = raw.username,
-                    Message = raw.message,
-                    Sprite = sprite
-                });
-            }
+            var decodeSw = Stopwatch.StartNew();
+            var results = DecodeNPCList(response.data);
+            decodeSw.Stop();
+            totalSw.Stop();
+
+            Debug.Log($"[NPC] 解码完成: {results.Count} 个, 解码 {decodeSw.ElapsedMilliseconds}ms, 总计 {totalSw.ElapsedMilliseconds}ms");
 
             onSuccess?.Invoke(results);
         }
     }
 
-    /// <summary>
-    /// 将 base64 data URL 解码为 Sprite
-    /// </summary>
-    public static Sprite Base64ToSprite(string base64DataUrl)
+    private static List<NPCInfo> DecodeNPCList(NPCRawData[] rawList)
+    {
+        var results = new List<NPCInfo>();
+        foreach (var raw in rawList)
+        {
+            Sprite sprite = LoadCachedSprite(raw.id);
+            if (sprite == null && !string.IsNullOrEmpty(raw.image))
+            {
+                sprite = Base64ToSprite(raw.image);
+                if (sprite != null)
+                    SaveSpriteToCache(raw.id, sprite.texture);
+            }
+
+            results.Add(new NPCInfo
+            {
+                Id = raw.id,
+                Username = raw.username,
+                Message = raw.message,
+                Sprite = sprite
+            });
+        }
+        return results;
+    }
+
+    public static Sprite Base64ToSprite(string base64DataUrl, float pixelsPerUnit = DefaultPixelsPerUnit)
     {
         if (string.IsNullOrEmpty(base64DataUrl))
             return null;
 
         try
         {
-            // 剥离 data:image/png;base64, 前缀
             string base64 = base64DataUrl;
             int commaIndex = base64.IndexOf(',');
             if (commaIndex >= 0)
@@ -86,33 +143,52 @@ public static class NPCApiService
 
             byte[] bytes = Convert.FromBase64String(base64);
             Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            tex.filterMode = FilterMode.Point; // 像素风格
+            tex.filterMode = FilterMode.Point;
             if (!tex.LoadImage(bytes))
             {
-                Debug.LogWarning("[NPCApiService] Base64 图片解码失败");
+                Debug.LogWarning("[NPC] Base64 图片解码失败");
                 return null;
             }
 
-            return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+            // pivot (0.5, 0) = 底部居中，NPC 站在点位上而不是飘在空中
+            return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
+                new Vector2(0.5f, 0f), pixelsPerUnit);
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[NPCApiService] Base64 解码异常: {e.Message}");
+            Debug.LogWarning($"[NPC] Base64 解码异常: {e.Message}");
             return null;
         }
     }
 
-    // ===== 本地缓存 =====
+    // ===== JSON 缓存 =====
+
+    private static void SaveJsonCache(string json)
+    {
+        try
+        {
+            EnsureCacheDir();
+            File.WriteAllText(JsonCachePath, json);
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[NPC] JSON 缓存保存失败: {e.Message}");
+        }
+    }
+
+    // ===== 图片缓存 =====
 
     private static void EnsureCacheDir()
     {
         if (!Directory.Exists(CacheDir))
             Directory.CreateDirectory(CacheDir);
+        if (!Directory.Exists(ImageCacheDir))
+            Directory.CreateDirectory(ImageCacheDir);
     }
 
-    private static string GetCachePath(int npcId)
+    private static string GetImageCachePath(int npcId)
     {
-        return Path.Combine(CacheDir, $"npc_{npcId}.png");
+        return Path.Combine(ImageCacheDir, $"npc_{npcId}.png");
     }
 
     private static void SaveSpriteToCache(int npcId, Texture2D texture)
@@ -120,18 +196,17 @@ public static class NPCApiService
         try
         {
             EnsureCacheDir();
-            byte[] png = texture.EncodeToPNG();
-            File.WriteAllBytes(GetCachePath(npcId), png);
+            File.WriteAllBytes(GetImageCachePath(npcId), texture.EncodeToPNG());
         }
         catch (Exception e)
         {
-            Debug.LogWarning($"[NPCApiService] 缓存保存失败 (id={npcId}): {e.Message}");
+            Debug.LogWarning($"[NPC] 图片缓存保存失败 (id={npcId}): {e.Message}");
         }
     }
 
-    private static Sprite LoadCachedSprite(int npcId)
+    private static Sprite LoadCachedSprite(int npcId, float pixelsPerUnit = DefaultPixelsPerUnit)
     {
-        string path = GetCachePath(npcId);
+        string path = GetImageCachePath(npcId);
         if (!File.Exists(path))
             return null;
 
@@ -143,7 +218,8 @@ public static class NPCApiService
             if (!tex.LoadImage(bytes))
                 return null;
 
-            return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 100f);
+            return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
+                new Vector2(0.5f, 0f), pixelsPerUnit);
         }
         catch
         {
@@ -151,28 +227,22 @@ public static class NPCApiService
         }
     }
 
-    /// <summary>
-    /// 清除所有 NPC 图片缓存
-    /// </summary>
     public static void ClearCache()
     {
         if (Directory.Exists(CacheDir))
         {
             Directory.Delete(CacheDir, true);
-            Debug.Log("[NPCApiService] 图片缓存已清除");
+            Debug.Log("[NPC] 全部缓存已清除");
         }
     }
 
-    /// <summary>
-    /// 获取缓存大小（字节数）
-    /// </summary>
     public static long GetCacheSize()
     {
         if (!Directory.Exists(CacheDir))
             return 0;
 
         long size = 0;
-        foreach (var file in Directory.GetFiles(CacheDir))
+        foreach (var file in Directory.GetFiles(CacheDir, "*", SearchOption.AllDirectories))
             size += new FileInfo(file).Length;
         return size;
     }
