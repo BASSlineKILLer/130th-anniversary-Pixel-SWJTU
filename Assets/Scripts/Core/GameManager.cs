@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour
 
     [Header("游戏状态")]
     public bool isPaused = false;
+    public bool isDialogueLocked = false;
 
     private void Awake()
     {
@@ -28,6 +29,10 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
+        // 对话期间不允许 ESC 抢占为暂停菜单
+        if (isDialogueLocked)
+            return;
+
         // 示例：按下 ESC 键切换暂停状态
         if (Input.GetKeyDown(KeyCode.Escape))
         {
@@ -58,6 +63,16 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f; // 恢复游戏时间
         Debug.Log("Game Resumed");
         // 这里可以添加隐藏暂停菜单的代码
+    }
+
+    /// <summary>
+    /// 仅锁定/解锁玩家与游戏内交互，不触发暂停菜单，也不修改 timeScale。
+    /// 用于 NPC 对话等需要停角色但不想弹出暂停窗口的场景。
+    /// </summary>
+    public void SetDialogueLock(bool locked)
+    {
+        isDialogueLocked = locked;
+        Debug.Log(locked ? "Dialogue Locked" : "Dialogue Unlocked");
     }
 }
 

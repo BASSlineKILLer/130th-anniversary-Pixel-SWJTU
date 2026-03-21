@@ -13,7 +13,7 @@ using SWJTUGame.UI;
 ///   - 按 E 打开对话框：左侧立绘、右上 username、右下 message（打字机逐字显示）
 ///   - 打字中按 E / 点击屏幕 → 立即显示全文
 ///   - 全文显示后按 E / 点击屏幕 → 关闭对话
-///   - 对话期间角色不能移动（通过 GameManager.PauseGame）
+///   - 对话期间角色不能移动（通过 GameManager.SetDialogueLock）
 ///
 /// 【对话框 Prefab 结构】
 /// DialoguePanel (Image - 对话框.png 背景, CanvasGroup)
@@ -180,9 +180,9 @@ public class NPCInteraction : MonoBehaviour
         SetPortrait(npc.Info.Sprite);
         SetName(npc.Info.Username);
 
-        // 暂停游戏（角色不能移动）
+        // 锁定角色移动，但不触发暂停菜单
         if (GameManager.Instance != null)
-            GameManager.Instance.PauseGame();
+            GameManager.Instance.SetDialogueLock(true);
 
         // 淡入面板
         StartCoroutine(ShowDialoguePanel(npc.Info.Message));
@@ -218,16 +218,16 @@ public class NPCInteraction : MonoBehaviour
     {
         yield return StartCoroutine(UIAnimationHelper.FadeOut(dialogueCanvasGroup, fadeDuration));
 
-        // 恢复游戏
+        // 解除对话锁
         if (GameManager.Instance != null)
-            GameManager.Instance.ResumeGame();
+            GameManager.Instance.SetDialogueLock(false);
     }
 
     // ==================== 打字机效果 ====================
 
     /// <summary>
     /// 逐字显示 message。使用 TMP 的 maxVisibleCharacters。
-    /// 因为对话时 timeScale=0，用 Time.unscaledDeltaTime 驱动。
+    /// 即使未来切到暂停模式也能工作，因此统一用 Time.unscaledDeltaTime 驱动。
     /// </summary>
     private IEnumerator TypewriterRoutine(string message)
     {

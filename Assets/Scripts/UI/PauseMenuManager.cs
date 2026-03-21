@@ -5,7 +5,8 @@ namespace SWJTUGame.UI
 {
     /// <summary>
     /// 暂停菜单管理器
-    /// 被动监听 GameManager.isPaused 状态变化，不抢占 ESC 输入
+    /// 被动监听 GameManager.isPaused 状态变化，不抢占 ESC 输入。
+    /// 只响应真正的暂停，不响应对话锁。
     /// 挂载在游戏场景中的 Canvas 或空 GameObject 上
     /// </summary>
     public class PauseMenuManager : MonoBehaviour

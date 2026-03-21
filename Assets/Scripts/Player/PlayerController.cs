@@ -33,8 +33,9 @@ namespace Player
 
         private void Update()
         {
-            // 检查游戏是否暂停 (需确保项目中存在GameManager)
-            if (GameManager.Instance != null && GameManager.Instance.isPaused)
+            // 检查游戏是否暂停或被对话锁定
+            if (GameManager.Instance != null &&
+                (GameManager.Instance.isPaused || GameManager.Instance.isDialogueLocked))
             {
                 rb.velocity = Vector2.zero; // 暂停时重置速度
                 return;
