@@ -61,6 +61,11 @@ public class NPCController : MonoBehaviour
         }
 
         gameObject.name = $"NPC_{info.Id}_{info.Username}";
+
+        // 初始化走动组件（如果 Prefab 上挂了 NPCWalk）
+        var walk = GetComponent<NPCWalk>();
+        if (walk != null)
+            walk.Init(transform.position);
     }
 
     /// <summary>

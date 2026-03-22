@@ -17,6 +17,11 @@ public static class NPCApiService
     private static string ImageCacheDir => Path.Combine(CacheDir, "Images");
     private static string JsonCachePath => Path.Combine(CacheDir, "api_response.json");
 
+    // 网络层容错参数：应对临时断连、服务端瞬时抖动
+    private const int RequestTimeoutSeconds = 20;
+    private const int MaxRequestAttempts = 3;
+    private const float RetryDelaySeconds = 1.2f;
+
     // NPC 角色图的 pixelsPerUnit，值越小场景中越大
     // 32x32 像素图 → pixelsPerUnit=32 → 场景中 1 个单位大小
     public const float DefaultPixelsPerUnit = 32f;
@@ -53,56 +58,98 @@ public static class NPCApiService
             }
         }
 
-        // ===== 阶段 2：网络请求 =====
-        var httpSw = Stopwatch.StartNew();
-        using (UnityWebRequest req = UnityWebRequest.Get(url))
+        // ===== 阶段 2：网络请求（带重试） =====
+        string json = null;
+        string lastError = null;
+        long totalHttpMs = 0;
+
+        for (int attempt = 1; attempt <= MaxRequestAttempts; attempt++)
         {
-            yield return req.SendWebRequest();
-            httpSw.Stop();
-
-            if (req.result != UnityWebRequest.Result.Success)
+            var httpSw = Stopwatch.StartNew();
+            using (UnityWebRequest req = UnityWebRequest.Get(url))
             {
-                string msg = $"HTTP 请求失败 ({httpSw.ElapsedMilliseconds}ms): {req.error}";
-                Debug.LogWarning($"[NPC] {msg}");
-                if (!cacheLoaded)
-                    onError?.Invoke(msg);
-                yield break;
+                req.timeout = RequestTimeoutSeconds;
+                req.SetRequestHeader("Accept", "application/json");
+
+                yield return req.SendWebRequest();
+                httpSw.Stop();
+                totalHttpMs += httpSw.ElapsedMilliseconds;
+
+                bool success = req.result == UnityWebRequest.Result.Success;
+                string text = req.downloadHandler != null ? req.downloadHandler.text : string.Empty;
+
+                if (success && !string.IsNullOrEmpty(text))
+                {
+                    json = text;
+                    Debug.Log($"[NPC] HTTP 请求成功 (attempt {attempt}/{MaxRequestAttempts}): {httpSw.ElapsedMilliseconds}ms, {text.Length} 字符");
+                    break;
+                }
+
+                lastError = req.error;
+                string bodyInfo = string.IsNullOrEmpty(text) ? "响应体为空" : $"响应体长度={text.Length}";
+                Debug.LogWarning($"[NPC] HTTP 请求失败 (attempt {attempt}/{MaxRequestAttempts}, {httpSw.ElapsedMilliseconds}ms): {lastError}, {bodyInfo}");
             }
 
-            Debug.Log($"[NPC] HTTP 请求完成: {httpSw.ElapsedMilliseconds}ms, {req.downloadHandler.text.Length} 字符");
-
-            string json = req.downloadHandler.text;
-            NPCApiResponse response;
-            try
-            {
-                response = JsonUtility.FromJson<NPCApiResponse>(json);
-            }
-            catch (Exception e)
-            {
-                if (!cacheLoaded)
-                    onError?.Invoke($"JSON 解析失败: {e.Message}");
-                yield break;
-            }
-
-            if (response == null || !response.success || response.data == null)
-            {
-                if (!cacheLoaded)
-                    onError?.Invoke("API 返回数据无效或 success=false");
-                yield break;
-            }
-
-            // 保存 JSON 缓存供下次秒加载
-            SaveJsonCache(json);
-
-            var decodeSw = Stopwatch.StartNew();
-            var results = DecodeNPCList(response.data);
-            decodeSw.Stop();
-            totalSw.Stop();
-
-            Debug.Log($"[NPC] 解码完成: {results.Count} 个, 解码 {decodeSw.ElapsedMilliseconds}ms, 总计 {totalSw.ElapsedMilliseconds}ms");
-
-            onSuccess?.Invoke(results);
+            if (attempt < MaxRequestAttempts)
+                yield return new WaitForSeconds(RetryDelaySeconds * attempt);
         }
+
+        if (string.IsNullOrEmpty(json))
+        {
+            string msg = $"HTTP 请求失败（重试 {MaxRequestAttempts} 次，总计 {totalHttpMs}ms）: {lastError}";
+            if (cacheLoaded)
+            {
+                Debug.LogWarning($"[NPC] {msg}，已使用本地缓存继续运行");
+                yield break;
+            }
+
+            Debug.LogWarning($"[NPC] {msg}");
+            onError?.Invoke(msg);
+            yield break;
+        }
+
+        NPCApiResponse response;
+        try
+        {
+            response = JsonUtility.FromJson<NPCApiResponse>(json);
+        }
+        catch (Exception e)
+        {
+            string parseMsg = $"JSON 解析失败: {e.Message}";
+            if (cacheLoaded)
+            {
+                Debug.LogWarning($"[NPC] {parseMsg}，已使用本地缓存继续运行");
+                yield break;
+            }
+
+            onError?.Invoke(parseMsg);
+            yield break;
+        }
+
+        if (response == null || !response.success || response.data == null)
+        {
+            const string invalidMsg = "API 返回数据无效或 success=false";
+            if (cacheLoaded)
+            {
+                Debug.LogWarning($"[NPC] {invalidMsg}，已使用本地缓存继续运行");
+                yield break;
+            }
+
+            onError?.Invoke(invalidMsg);
+            yield break;
+        }
+
+        // 保存 JSON 缓存供下次秒加载
+        SaveJsonCache(json);
+
+        var decodeSw = Stopwatch.StartNew();
+        var results = DecodeNPCList(response.data);
+        decodeSw.Stop();
+        totalSw.Stop();
+
+        Debug.Log($"[NPC] 解码完成: {results.Count} 个, 网络总计 {totalHttpMs}ms, 解码 {decodeSw.ElapsedMilliseconds}ms, 总计 {totalSw.ElapsedMilliseconds}ms");
+
+        onSuccess?.Invoke(results);
     }
 
     private static List<NPCInfo> DecodeNPCList(NPCRawData[] rawList)

@@ -189,6 +189,7 @@ GameObject:
   - component: {fileID: 2979176609497918681}
   - component: {fileID: 6720644349401373988}
   - component: {fileID: 5419108654029588288}
+  - component: {fileID: 6096089716241714567}
   m_Layer: 0
   m_Name: NPC
   m_TagString: Untagged
@@ -324,3 +325,21 @@ MonoBehaviour:
   bubbleRoot: {fileID: 5783351178880776257}
   bubbleOffset: {x: 0, y: 0.3, z: 0}
   triggerPadding: 1.5
+--- !u!114 &6096089716241714567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8558224348558117790}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b30d9604f3a4781479294832ea49f3f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveProbability: 0.981
+  moveSpeed: 2
+  idleTimeRange: {x: 2, y: 5}
+  roamRadius: 5
+  bobAmplitude: 0.25
+  bobFrequency: 10

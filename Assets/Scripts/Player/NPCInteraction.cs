@@ -63,13 +63,13 @@ public class NPCInteraction : MonoBehaviour
 
     private void Start()
     {
-        if (dialogueCanvasGroup != null)
-        {
-            dialogueCanvasGroup.alpha = 0f;
-            dialogueCanvasGroup.interactable = false;
-            dialogueCanvasGroup.blocksRaycasts = false;
-            dialogueCanvasGroup.gameObject.SetActive(false);
-        }
+        ResetDialogueUI();
+    }
+
+    private void OnDisable()
+    {
+        // 对象失活时不能再启动协程，直接同步收尾，避免锁状态残留。
+        CloseDialogueImmediate();
     }
 
     private void Update()
@@ -155,7 +155,12 @@ public class NPCInteraction : MonoBehaviour
 
         // 如果离开的是正在对话的 NPC，强制关闭
         if (npc == dialogueNPC && state != DialogueState.Idle)
-            CloseDialogue();
+        {
+            if (CanRunDialogueCoroutine())
+                CloseDialogue();
+            else
+                CloseDialogueImmediate();
+        }
 
         // 如果离开的是显示气泡的 NPC，立刻切换
         if (npc == closestNPC)
@@ -169,16 +174,21 @@ public class NPCInteraction : MonoBehaviour
 
     private void OpenDialogue(NPCController npc)
     {
-        if (npc == null || npc.Info == null) return;
+        if (npc == null || npc.Info == null || !CanRunDialogueCoroutine()) return;
 
         dialogueNPC = npc;
+        SetDialogueNpcMovementPaused(true);
 
         // 隐藏气泡（对话中不需要气泡）
         npc.HideBubble();
 
+        // 每次对话开始前先重置 UI，避免上一位 NPC 的内容短暂残留。
+        ResetDialogueContent();
+
         // 设置 UI 内容
         SetPortrait(npc.Info.Sprite);
         SetName(npc.Info.Username);
+        PrepareMessage(npc.Info.Message);
 
         // 锁定角色移动，但不触发暂停菜单
         if (GameManager.Instance != null)
@@ -200,6 +210,8 @@ public class NPCInteraction : MonoBehaviour
 
     private void CloseDialogue()
     {
+        SetDialogueNpcMovementPaused(false);
+
         // 停止打字机
         if (typewriterCoroutine != null)
         {
@@ -210,13 +222,41 @@ public class NPCInteraction : MonoBehaviour
         state = DialogueState.Idle;
         dialogueNPC = null;
 
+        // 对象或对话框已失活时不能 StartCoroutine，改为立即关闭。
+        if (!CanRunDialogueCoroutine())
+        {
+            CloseDialogueImmediate();
+            return;
+        }
+
         // 淡出面板
         StartCoroutine(HideDialoguePanel());
+    }
+
+    private void CloseDialogueImmediate()
+    {
+        SetDialogueNpcMovementPaused(false);
+
+        if (typewriterCoroutine != null)
+        {
+            StopCoroutine(typewriterCoroutine);
+            typewriterCoroutine = null;
+        }
+
+        state = DialogueState.Idle;
+        dialogueNPC = null;
+
+        ResetDialogueUI();
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.SetDialogueLock(false);
     }
 
     private IEnumerator HideDialoguePanel()
     {
         yield return StartCoroutine(UIAnimationHelper.FadeOut(dialogueCanvasGroup, fadeDuration));
+
+        ResetDialogueUI();
 
         // 解除对话锁
         if (GameManager.Instance != null)
@@ -231,8 +271,7 @@ public class NPCInteraction : MonoBehaviour
     /// </summary>
     private IEnumerator TypewriterRoutine(string message)
     {
-        npcMessageText.text = message;
-        npcMessageText.ForceMeshUpdate();
+        PrepareMessage(message);
 
         int totalChars = npcMessageText.textInfo.characterCount;
         npcMessageText.maxVisibleCharacters = 0;
@@ -298,5 +337,61 @@ public class NPCInteraction : MonoBehaviour
     {
         if (npcNameText != null)
             npcNameText.text = string.IsNullOrEmpty(username) ? "???" : username;
+    }
+
+    private void PrepareMessage(string message)
+    {
+        if (npcMessageText == null) return;
+
+        npcMessageText.text = message ?? string.Empty;
+        npcMessageText.maxVisibleCharacters = 0;
+        npcMessageText.ForceMeshUpdate();
+    }
+
+    private void ResetDialogueContent()
+    {
+        if (npcPortraitImage != null)
+        {
+            npcPortraitImage.sprite = null;
+            npcPortraitImage.gameObject.SetActive(false);
+        }
+
+        if (npcNameText != null)
+            npcNameText.text = string.Empty;
+
+        if (npcMessageText != null)
+        {
+            npcMessageText.text = string.Empty;
+            npcMessageText.maxVisibleCharacters = 0;
+        }
+    }
+
+    private void ResetDialogueUI()
+    {
+        ResetDialogueContent();
+
+        if (dialogueCanvasGroup != null)
+        {
+            dialogueCanvasGroup.alpha = 0f;
+            dialogueCanvasGroup.interactable = false;
+            dialogueCanvasGroup.blocksRaycasts = false;
+            dialogueCanvasGroup.gameObject.SetActive(false);
+        }
+    }
+
+    private bool CanRunDialogueCoroutine()
+    {
+        // 只检查 Player 自身是否活跃，不检查对话框——对话框平时是 SetActive(false) 的，
+        // 由 FadeIn 负责在协程里激活，不能把它列为"能否启动协程"的前提条件。
+        return isActiveAndEnabled && gameObject.activeInHierarchy && dialogueCanvasGroup != null;
+    }
+
+    private void SetDialogueNpcMovementPaused(bool paused)
+    {
+        if (dialogueNPC == null) return;
+
+        var walk = dialogueNPC.GetComponent<NPCWalk>();
+        if (walk != null)
+            walk.SetDialoguePaused(paused);
     }
 }

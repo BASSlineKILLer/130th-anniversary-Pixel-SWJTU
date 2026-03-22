@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e14a7c05104ab26499386a97e3556b46, type: 3}
   m_Name: "\u9702\u79CB\u68A7"
   m_EditorClassIdentifier: 
-  username: muqiuwu
+  username: "\u9702\u79CB\u68A7"
   message: "\u7231\u4F60\u55B5~"
   sprite: {fileID: 21300000, guid: 5f1ad8f5b5cd2f04a8915634d628d56d, type: 3}
