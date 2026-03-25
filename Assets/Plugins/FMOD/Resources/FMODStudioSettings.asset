@@ -417,6 +417,7 @@ MonoBehaviour:
   - Master
   Banks:
   - BGM1
+  - Step
   BanksToLoad: []
   LiveUpdatePort: 9264
   EnableMemoryTracking: 0

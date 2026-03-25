@@ -1,4 +1,6 @@
 using UnityEngine;
+using FMODUnity;
+using FMOD.Studio;
 
 /// <summary>
 /// NPC 自由走动 + 走路抖动效果。
@@ -24,6 +26,16 @@ public class NPCWalk : MonoBehaviour
     public float bobAmplitude = 0.06f;
     [Tooltip("抖动频率（越大越快）")]
     public float bobFrequency = 8f;
+
+    [Header("脚步声")]
+    [Tooltip("FMOD 脚步声事件")]
+    public EventReference footstepEvent;
+    [Tooltip("材质检测组件")]
+    public FootstepMaterialDetector materialDetector;
+    [Tooltip("FMOD material 参数名")]
+    public string materialParamName = "material";
+
+    private float prevBobSin;
 
     private bool canMove;
     private bool isMoving;
@@ -89,8 +101,14 @@ public class NPCWalk : MonoBehaviour
                 spriteRenderer.flipX = moveDir.x > 0;
 
             // --- 视觉位置 = 逻辑位置 + bob ---
-            float bob = Mathf.Abs(Mathf.Sin(Time.time * bobFrequency)) * bobAmplitude;
+            float curSin = Mathf.Sin(Time.time * bobFrequency);
+            float bob = Mathf.Abs(curSin) * bobAmplitude;
             transform.position = new Vector3(logicalPosition.x, logicalPosition.y + bob, transform.position.z);
+
+            // bob 正弦波过零点 = 一步落地，触发脚步声
+            if (prevBobSin < 0f && curSin >= 0f)
+                PlayFootstep();
+            prevBobSin = curSin;
         }
         else
         {
@@ -130,6 +148,21 @@ public class NPCWalk : MonoBehaviour
     private void ResetIdleTimer()
     {
         idleTimer = Random.Range(idleTimeRange.x, idleTimeRange.y);
+    }
+
+    private void PlayFootstep()
+    {
+        if (footstepEvent.IsNull) return;
+
+        int material = FootstepMaterialDetector.MATERIAL_ROAD;
+        if (materialDetector != null)
+            material = materialDetector.GetMaterialAtPosition(transform.position);
+
+        EventInstance instance = RuntimeManager.CreateInstance(footstepEvent);
+        instance.setParameterByName(materialParamName, material);
+        instance.set3DAttributes(RuntimeUtils.To3DAttributes(transform.position));
+        instance.start();
+        instance.release();
     }
 
     private void OnDrawGizmosSelected()
