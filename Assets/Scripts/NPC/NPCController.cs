@@ -54,7 +54,12 @@ public class NPCController : MonoBehaviour
     {
         Info = info;
 
-        if (info.Sprite != null)
+        // 如果在 Awake 之前（例如父物体隐藏导致 Instantiate 不会立即触发 Awake）调用了 SetData，
+        // 我们需要手动获取依赖组件，避免 NullReferenceException。
+        if (spriteRenderer == null)
+            spriteRenderer = GetComponent<SpriteRenderer>();
+
+        if (info.Sprite != null && spriteRenderer != null)
         {
             spriteRenderer.sprite = info.Sprite;
             AdjustColliderAndBubble();

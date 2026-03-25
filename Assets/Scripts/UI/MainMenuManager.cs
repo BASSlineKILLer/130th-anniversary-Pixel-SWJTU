@@ -115,6 +115,12 @@ namespace SWJTUGame.UI
         {
             if (panel == null) return;
 
+            // 播放音效（有专用音效用专用的，否则回退到 Click）
+            if (!string.IsNullOrEmpty(UIAudioManager.Instance?.panelOpenEvent))
+                UIAudioManager.PlayPanelOpen();
+            else
+                UIAudioManager.PlayClick();
+
             if (canvasGroup != null)
             {
                 // 有 CanvasGroup → 使用淡入动画
@@ -130,6 +136,12 @@ namespace SWJTUGame.UI
         private void HidePanel(GameObject panel, CanvasGroup canvasGroup)
         {
             if (panel == null) return;
+
+            // 播放音效（有专用音效用专用的，否则回退到 Click）
+            if (!string.IsNullOrEmpty(UIAudioManager.Instance?.panelCloseEvent))
+                UIAudioManager.PlayPanelClose();
+            else
+                UIAudioManager.PlayClick();
 
             if (canvasGroup != null)
             {

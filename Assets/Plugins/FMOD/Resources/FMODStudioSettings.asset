@@ -417,6 +417,7 @@ MonoBehaviour:
   - Master
   Banks:
   - BGM1
+  - Click
   - Step
   BanksToLoad: []
   LiveUpdatePort: 9264

@@ -48,8 +48,11 @@ public class NPCInteraction : MonoBehaviour
     public KeyCode interactKey = KeyCode.E;
 
     // ===== 状态 =====
-    private enum DialogueState { Idle, Typing, Waiting }
+    private enum DialogueState { Idle, Typing, Waiting, SpecialTyping, SpecialWaiting }
     private DialogueState state = DialogueState.Idle;
+
+    // 特殊 NPC 多轮对话引用
+    private SpecialNPCController specialDialogueNPC;
 
     // 附近的 NPC 集合
     private HashSet<NPCController> nearbyNPCs = new HashSet<NPCController>();
@@ -97,6 +100,17 @@ public class NPCInteraction : MonoBehaviour
             case DialogueState.Waiting:
                 if (inputTriggered)
                     CloseDialogue();
+                break;
+
+            // ── 特殊 NPC 多轮对话状态 ──
+            case DialogueState.SpecialTyping:
+                if (inputTriggered)
+                    SkipTypewriter();
+                break;
+
+            case DialogueState.SpecialWaiting:
+                if (inputTriggered)
+                    AdvanceSpecialDialogue();
                 break;
         }
     }
@@ -156,10 +170,22 @@ public class NPCInteraction : MonoBehaviour
         // 如果离开的是正在对话的 NPC，强制关闭
         if (npc == dialogueNPC && state != DialogueState.Idle)
         {
-            if (CanRunDialogueCoroutine())
-                CloseDialogue();
+            if (specialDialogueNPC != null)
+            {
+                // 特殊 NPC 对话中走开
+                if (CanRunDialogueCoroutine())
+                    CloseSpecialDialogue();
+                else
+                    CloseDialogueImmediate();
+            }
             else
-                CloseDialogueImmediate();
+            {
+                // 普通 NPC 对话中走开
+                if (CanRunDialogueCoroutine())
+                    CloseDialogue();
+                else
+                    CloseDialogueImmediate();
+            }
         }
 
         // 如果离开的是显示气泡的 NPC，立刻切换
@@ -174,7 +200,18 @@ public class NPCInteraction : MonoBehaviour
 
     private void OpenDialogue(NPCController npc)
     {
-        if (npc == null || npc.Info == null || !CanRunDialogueCoroutine()) return;
+        if (npc == null || !CanRunDialogueCoroutine()) return;
+
+        // ── 检测是否为特殊 NPC ──
+        var special = npc as SpecialNPCController;
+        if (special != null)
+        {
+            OpenSpecialDialogue(special);
+            return;
+        }
+
+        // ── 普通 NPC 单条对话（原有逻辑不变）──
+        if (npc.Info == null) return;
 
         dialogueNPC = npc;
         SetDialogueNpcMovementPaused(true);
@@ -196,6 +233,117 @@ public class NPCInteraction : MonoBehaviour
 
         // 淡入面板
         StartCoroutine(ShowDialoguePanel(npc.Info.Message));
+    }
+
+    // ==================== 特殊 NPC 多轮对话 ====================
+
+    private void OpenSpecialDialogue(SpecialNPCController special)
+    {
+        if (!special.CanStartDialogue()) return;
+
+        specialDialogueNPC = special;
+        dialogueNPC = special; // 基类引用也设置，用于走开时强制关闭
+        SetDialogueNpcMovementPaused(true);
+
+        special.HideBubble();
+        special.StartDialogue();
+
+        ResetDialogueContent();
+
+        // 使用特殊 NPC 的立绘和名字
+        SetPortrait(special.GetPortrait());
+        SetName(special.GetName());
+
+        string firstLine = special.GetCurrentLine();
+        PrepareMessage(firstLine);
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.SetDialogueLock(true);
+
+        StartCoroutine(ShowSpecialDialoguePanel(firstLine));
+    }
+
+    private IEnumerator ShowSpecialDialoguePanel(string message)
+    {
+        yield return StartCoroutine(UIAnimationHelper.FadeIn(dialogueCanvasGroup, fadeDuration));
+
+        state = DialogueState.SpecialTyping;
+        typewriterCoroutine = StartCoroutine(SpecialTypewriterRoutine(message));
+    }
+
+    /// <summary>
+    /// 特殊 NPC 打字机：完成后进入 SpecialWaiting 状态（等待按 E 推进）
+    /// </summary>
+    private IEnumerator SpecialTypewriterRoutine(string message)
+    {
+        PrepareMessage(message);
+
+        int totalChars = npcMessageText.textInfo.characterCount;
+        npcMessageText.maxVisibleCharacters = 0;
+
+        for (int i = 0; i < totalChars; i++)
+        {
+            npcMessageText.maxVisibleCharacters = i + 1;
+            float elapsed = 0f;
+            while (elapsed < typeSpeed)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                yield return null;
+            }
+        }
+
+        typewriterCoroutine = null;
+        state = DialogueState.SpecialWaiting;
+    }
+
+    /// <summary>
+    /// 按 E 推进特殊 NPC 对话：有下一行 → 显示下一行；没有 → 关闭对话
+    /// </summary>
+    private void AdvanceSpecialDialogue()
+    {
+        if (specialDialogueNPC == null)
+        {
+            CloseSpecialDialogue();
+            return;
+        }
+
+        if (specialDialogueNPC.AdvanceDialogue())
+        {
+            // 还有下一行 → 打字机显示
+            string nextLine = specialDialogueNPC.GetCurrentLine();
+            PrepareMessage(nextLine);
+
+            state = DialogueState.SpecialTyping;
+            typewriterCoroutine = StartCoroutine(SpecialTypewriterRoutine(nextLine));
+        }
+        else
+        {
+            // 对话结束
+            CloseSpecialDialogue();
+        }
+    }
+
+    private void CloseSpecialDialogue()
+    {
+        SetDialogueNpcMovementPaused(false);
+
+        if (typewriterCoroutine != null)
+        {
+            StopCoroutine(typewriterCoroutine);
+            typewriterCoroutine = null;
+        }
+
+        state = DialogueState.Idle;
+        specialDialogueNPC = null;
+        dialogueNPC = null;
+
+        if (!CanRunDialogueCoroutine())
+        {
+            CloseDialogueImmediate();
+            return;
+        }
+
+        StartCoroutine(HideDialoguePanel());
     }
 
     private IEnumerator ShowDialoguePanel(string message)
@@ -245,6 +393,7 @@ public class NPCInteraction : MonoBehaviour
 
         state = DialogueState.Idle;
         dialogueNPC = null;
+        specialDialogueNPC = null;
 
         ResetDialogueUI();
 
@@ -312,7 +461,11 @@ public class NPCInteraction : MonoBehaviour
             npcMessageText.maxVisibleCharacters = npcMessageText.textInfo.characterCount;
         }
 
-        state = DialogueState.Waiting;
+        // 根据当前状态决定跳转目标
+        if (state == DialogueState.SpecialTyping)
+            state = DialogueState.SpecialWaiting;
+        else
+            state = DialogueState.Waiting;
     }
 
     // ==================== UI 设置 ====================

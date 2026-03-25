@@ -206,7 +206,7 @@ Transform:
   m_GameObject: {fileID: 8558224348558117790}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.441751, y: 1.590735, z: -0.02833374}
+  m_LocalPosition: {x: 0, y: 1.08125, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -343,3 +343,12 @@ MonoBehaviour:
   roamRadius: 5
   bobAmplitude: 0.25
   bobFrequency: 10
+  footstepEvent:
+    Guid:
+      Data1: 0
+      Data2: 0
+      Data3: 0
+      Data4: 0
+    Path: 
+  materialDetector: {fileID: 0}
+  materialParamName: material

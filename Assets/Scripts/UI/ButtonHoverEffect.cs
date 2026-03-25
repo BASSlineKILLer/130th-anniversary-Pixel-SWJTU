@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+// 注意：点击音效由同对象上的 UIClickSound 组件负责（如果存在）
+// ButtonHoverEffect 仅负责视觉反馈，不重复播放音效
 
 namespace SWJTUGame.UI
 {
@@ -69,6 +71,7 @@ namespace SWJTUGame.UI
         public void OnPointerDown(PointerEventData eventData)
         {
             targetScale = pressScale;
+            // 音效由 UIClickSound（同对象）负责，此处只做缩放视觉反馈
         }
 
         public void OnPointerUp(PointerEventData eventData)
