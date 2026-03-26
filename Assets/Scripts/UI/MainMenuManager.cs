@@ -11,8 +11,10 @@ namespace SWJTUGame.UI
     public class MainMenuManager : MonoBehaviour
     {
         [Header("场景配置")]
-        [Tooltip("点击'开始游戏'后加载的场景名称")]
+        [Tooltip("点击'新游戏'后加载的场景名称")]
         public string gameSceneName = "GameScene";
+        [Tooltip("新游戏的初始出生点 ID")]
+        public string newGameSpawnPointId = "start";
 
         [Header("UI 面板引用（可选）")]
         [Tooltip("设置面板 — 留空则跳过设置功能")]
@@ -52,7 +54,7 @@ namespace SWJTUGame.UI
         // ===== 按钮回调方法（在 Inspector 中绑定到 Button.OnClick） =====
 
         /// <summary>
-        /// 开始游戏
+        /// 新游戏（清除旧存档）
         /// </summary>
         public void OnStartGame()
         {
@@ -61,7 +63,35 @@ namespace SWJTUGame.UI
                 Debug.LogWarning("[MainMenuManager] 未设置游戏场景名称！请在 Inspector 中配置 gameSceneName。");
                 return;
             }
-            SceneManager.LoadScene(gameSceneName);
+
+            if (SaveManager.Instance != null)
+                SaveManager.Instance.DeleteSave();
+
+            if (SceneTransitionManager.Instance != null)
+                SceneTransitionManager.Instance.TransitionToScene(gameSceneName, newGameSpawnPointId);
+            else
+                SceneManager.LoadScene(gameSceneName);
+        }
+
+        /// <summary>
+        /// 继续游戏（从存档恢复）
+        /// </summary>
+        public void OnContinueGame()
+        {
+            if (SaveManager.Instance == null || !SaveManager.Instance.HasSave())
+            {
+                Debug.LogWarning("[MainMenuManager] 没有存档，无法继续游戏");
+                return;
+            }
+
+            var data = SaveManager.Instance.Load();
+            if (data == null)
+            {
+                Debug.LogWarning("[MainMenuManager] 存档数据无效");
+                return;
+            }
+
+            SceneTransitionManager.Instance.LoadFromSave(data);
         }
 
         /// <summary>

@@ -21,8 +21,7 @@ public class GameManager : MonoBehaviour
             return;
         }
         Instance = this;
-        // 如果你希望在切场景时不销毁它，取消下面的注释
-        // DontDestroyOnLoad(gameObject);
+        DontDestroyOnLoad(gameObject);
     }
 
     private void Update()
