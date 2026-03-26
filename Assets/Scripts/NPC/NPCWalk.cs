@@ -1,6 +1,5 @@
 using UnityEngine;
 using FMODUnity;
-using FMOD.Studio;
 
 /// <summary>
 /// NPC 自由走动 + 走路抖动效果。
@@ -152,17 +151,11 @@ public class NPCWalk : MonoBehaviour
 
     private void PlayFootstep()
     {
-        if (footstepEvent.IsNull) return;
-
         int material = FootstepMaterialDetector.MATERIAL_ROAD;
         if (materialDetector != null)
             material = materialDetector.GetMaterialAtPosition(transform.position);
 
-        EventInstance instance = RuntimeManager.CreateInstance(footstepEvent);
-        instance.setParameterByName(materialParamName, material);
-        instance.set3DAttributes(RuntimeUtils.To3DAttributes(transform.position));
-        instance.start();
-        instance.release();
+        FootstepAudioHelper.Play(footstepEvent, materialParamName, material, transform.position);
     }
 
     private void OnDrawGizmosSelected()

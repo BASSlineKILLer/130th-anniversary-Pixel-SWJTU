@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Player
 {
@@ -12,10 +11,13 @@ namespace Player
         [Header("移动设置")]
         public float moveSpeed = 5f;
 
-        public Rigidbody2D rb;
-        public Vector2 moveInput;
-        public SpriteRenderer spriteRenderer;
-        public Animator playerAnim;
+        private Rigidbody2D rb;
+        private Vector2 moveInput;
+        private SpriteRenderer spriteRenderer;
+        private Animator playerAnim;
+
+        /// <summary>当前移动输入向量（供外部只读访问，如 FootstepAudioPlayer）</summary>
+        public Vector2 MoveInput => moveInput;
 
         private void Awake()
         {

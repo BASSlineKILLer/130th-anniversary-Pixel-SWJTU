@@ -94,42 +94,12 @@ namespace SWJTUGame.UI
 
         private void ShowPauseMenu()
         {
-            if (pauseMenuPanel == null) return;
-
-            // 播放音效（如果配置了专用的 PanelOpen 音效则用它，否则用 Click）
-            if (!string.IsNullOrEmpty(UIAudioManager.Instance?.panelOpenEvent))
-                UIAudioManager.PlayPanelOpen();
-            else
-                UIAudioManager.PlayClick();
-
-            if (panelCanvasGroup != null)
-            {
-                StartCoroutine(UIAnimationHelper.FadeIn(panelCanvasGroup, fadeDuration));
-            }
-            else
-            {
-                pauseMenuPanel.SetActive(true);
-            }
+            UIAnimationHelper.ShowPanelWithAudio(this, pauseMenuPanel, panelCanvasGroup, fadeDuration);
         }
 
         private void HidePauseMenu()
         {
-            if (pauseMenuPanel == null) return;
-
-            // 播放音效（如果配置了专用的 PanelClose 音效则用它，否则用 Click）
-            if (!string.IsNullOrEmpty(UIAudioManager.Instance?.panelCloseEvent))
-                UIAudioManager.PlayPanelClose();
-            else
-                UIAudioManager.PlayClick();
-
-            if (panelCanvasGroup != null)
-            {
-                StartCoroutine(UIAnimationHelper.FadeOut(panelCanvasGroup, fadeDuration));
-            }
-            else
-            {
-                pauseMenuPanel.SetActive(false);
-            }
+            UIAnimationHelper.HidePanelWithAudio(this, pauseMenuPanel, panelCanvasGroup, fadeDuration);
         }
     }
 }

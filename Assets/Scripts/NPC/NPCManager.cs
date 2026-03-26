@@ -21,8 +21,10 @@ public class NPCManager : MonoBehaviour
     [Header("NPC 生成配置")]
     [Tooltip("NPC Prefab 在 Resources 中的路径（不含扩展名）")]
     public string npcPrefabPath = "NPCData/NPC";
-    [Tooltip("预定义生成点位，手动 NPC 和 API NPC 按顺序共享")]
+    [Tooltip("预定义生成点位，NPC 随机分配到各点位")]
     public List<Transform> spawnPoints = new List<Transform>();
+    [Tooltip("每个出生点最多容纳的 NPC 数量")]
+    [Min(1)] public int maxNPCsPerSpawnPoint = 1;
 
     [Header("状态（只读）")]
     [SerializeField] private int manualCount;
@@ -32,7 +34,7 @@ public class NPCManager : MonoBehaviour
     private GameObject npcPrefab;
     private Transform npcParent;
     private Dictionary<int, GameObject> spawnedNPCs = new Dictionary<int, GameObject>();
-    private int nextSpawnIndex;
+    private Dictionary<int, int> spawnPointUsage = new Dictionary<int, int>();
 
     private void Awake()
     {
@@ -62,7 +64,7 @@ public class NPCManager : MonoBehaviour
 
     private void Start()
     {
-        nextSpawnIndex = 0;
+        InitSpawnPointUsage();
         LoadAllNPCs();
     }
 
@@ -139,6 +141,36 @@ public class NPCManager : MonoBehaviour
         apiCount = newCount;
         if (newCount > 0)
             Debug.Log($"[NPCManager] 新增 {newCount} 个 API NPC, 总计 {spawnedNPCs.Count} 个");
+
+        RemoveRevokedNPCs(npcList);
+    }
+
+    /// <summary>
+    /// 对比最新 API 列表，移除场景中已被撤销审核的 NPC（仅检查 API NPC，即 ID > 0）
+    /// </summary>
+    private void RemoveRevokedNPCs(List<NPCInfo> validList)
+    {
+        var validIds = new HashSet<int>();
+        foreach (var info in validList)
+            validIds.Add(info.Id);
+
+        var toRemove = new List<int>();
+        foreach (var kvp in spawnedNPCs)
+        {
+            if (kvp.Key > 0 && !validIds.Contains(kvp.Key))
+                toRemove.Add(kvp.Key);
+        }
+
+        foreach (int id in toRemove)
+        {
+            if (spawnedNPCs[id] != null)
+                Destroy(spawnedNPCs[id]);
+            spawnedNPCs.Remove(id);
+            NPCApiService.RemoveCachedImage(id);
+        }
+
+        if (toRemove.Count > 0)
+            Debug.Log($"[NPCManager] 已移除 {toRemove.Count} 个被撤销审核的 NPC");
     }
 
     private void OnFetchError(string error)
@@ -149,18 +181,7 @@ public class NPCManager : MonoBehaviour
 
     private bool SpawnNPC(NPCInfo info)
     {
-        Vector3 pos = Vector3.zero;
-
-        if (nextSpawnIndex < spawnPoints.Count)
-        {
-            Transform point = spawnPoints[nextSpawnIndex];
-            if (point != null)
-                pos = point.position;
-        }
-        else
-        {
-            Debug.LogWarning($"[NPCManager] 点位用完 ({nextSpawnIndex}/{spawnPoints.Count}), NPC(id={info.Id}) 生成在原点");
-        }
+        Vector3 pos = PickRandomSpawnPosition();
 
         GameObject go = Instantiate(npcPrefab, pos, Quaternion.identity, npcParent);
         var controller = go.GetComponent<NPCController>();
@@ -174,8 +195,34 @@ public class NPCManager : MonoBehaviour
         }
 
         spawnedNPCs[info.Id] = go;
-        nextSpawnIndex++;
         return true;
+    }
+
+    private void InitSpawnPointUsage()
+    {
+        spawnPointUsage.Clear();
+        for (int i = 0; i < spawnPoints.Count; i++)
+            spawnPointUsage[i] = 0;
+    }
+
+    private Vector3 PickRandomSpawnPosition()
+    {
+        var available = new List<int>();
+        for (int i = 0; i < spawnPoints.Count; i++)
+        {
+            if (spawnPoints[i] != null && spawnPointUsage[i] < maxNPCsPerSpawnPoint)
+                available.Add(i);
+        }
+
+        if (available.Count == 0)
+        {
+            Debug.LogWarning("[NPCManager] 所有出生点已满，NPC 生成在原点");
+            return Vector3.zero;
+        }
+
+        int chosen = available[Random.Range(0, available.Count)];
+        spawnPointUsage[chosen]++;
+        return spawnPoints[chosen].position;
     }
 
     /// <summary>
@@ -189,7 +236,7 @@ public class NPCManager : MonoBehaviour
                 Destroy(kvp.Value);
         }
         spawnedNPCs.Clear();
-        nextSpawnIndex = 0;
+        InitSpawnPointUsage();
         manualCount = 0;
         apiCount = 0;
         Debug.Log("[NPCManager] 所有 NPC 已清除");

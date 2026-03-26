@@ -3,7 +3,10 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 2
-  tags: []
+  tags:
+  - Background
+  - Water
+  - Bulidings
   layers:
   - Default
   - TransparentFX
@@ -40,4 +43,31 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 2082575185
+    locked: 0
+  - name: Grass
+    uniqueID: 3841975967
+    locked: 0
+  - name: Water
+    uniqueID: 1304633425
+    locked: 0
+  - name: Road
+    uniqueID: 2591137907
+    locked: 0
+  - name: Rock
+    uniqueID: 13338497
+    locked: 0
+  - name: Buildings
+    uniqueID: 3783118435
+    locked: 0
+  - name: Player
+    uniqueID: 2535261691
+    locked: 0
+  - name: Flower&Tree
+    uniqueID: 1914840825
+    locked: 0
+  - name: UI
+    uniqueID: 2733310001
     locked: 0

@@ -113,44 +113,12 @@ namespace SWJTUGame.UI
 
         private void ShowPanel(GameObject panel, CanvasGroup canvasGroup)
         {
-            if (panel == null) return;
-
-            // 播放音效（有专用音效用专用的，否则回退到 Click）
-            if (!string.IsNullOrEmpty(UIAudioManager.Instance?.panelOpenEvent))
-                UIAudioManager.PlayPanelOpen();
-            else
-                UIAudioManager.PlayClick();
-
-            if (canvasGroup != null)
-            {
-                // 有 CanvasGroup → 使用淡入动画
-                StartCoroutine(UIAnimationHelper.FadeIn(canvasGroup, panelFadeDuration));
-            }
-            else
-            {
-                // 无 CanvasGroup → 直接显示
-                panel.SetActive(true);
-            }
+            UIAnimationHelper.ShowPanelWithAudio(this, panel, canvasGroup, panelFadeDuration);
         }
 
         private void HidePanel(GameObject panel, CanvasGroup canvasGroup)
         {
-            if (panel == null) return;
-
-            // 播放音效（有专用音效用专用的，否则回退到 Click）
-            if (!string.IsNullOrEmpty(UIAudioManager.Instance?.panelCloseEvent))
-                UIAudioManager.PlayPanelClose();
-            else
-                UIAudioManager.PlayClick();
-
-            if (canvasGroup != null)
-            {
-                StartCoroutine(UIAnimationHelper.FadeOut(canvasGroup, panelFadeDuration));
-            }
-            else
-            {
-                panel.SetActive(false);
-            }
+            UIAnimationHelper.HidePanelWithAudio(this, panel, canvasGroup, panelFadeDuration);
         }
 
         private void HidePanelImmediate(GameObject panel)

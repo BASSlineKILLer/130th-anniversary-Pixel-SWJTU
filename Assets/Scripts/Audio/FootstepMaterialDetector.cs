@@ -3,9 +3,9 @@ using UnityEngine.Tilemaps;
 
 /// <summary>
 /// 检测指定世界坐标下的 Tilemap 瓷砖，返回对应的 FMOD material 参数值。
-/// 支持多层 Tilemap：按数组顺序从索引 0（最高优先级/最上层）开始检测，
+/// 每个 Tilemap 层直接指定材质类型（在 Inspector 中设置），无需依赖瓦片名称。
+/// 按数组顺序从索引 0（最高优先级/最上层）开始检测，
 /// 第一个在该位置有瓦片的层决定材质。
-/// 映射规则：草坪→1(grass)，直路/转角/十字路→0(road)，水体→2(water)，默认→0(road)。
 /// </summary>
 public class FootstepMaterialDetector : MonoBehaviour
 {
@@ -14,43 +14,65 @@ public class FootstepMaterialDetector : MonoBehaviour
     public const int MATERIAL_GRASS = 1;
     public const int MATERIAL_WATER = 2;
 
-    [Tooltip("场景中用于地面的 Tilemap 列表（按优先级从高到低排列，索引 0 = 最上层）")]
-    public Tilemap[] groundTilemaps;
+    [System.Serializable]
+    public struct TilemapMaterialEntry
+    {
+        [Tooltip("Tilemap 层引用")]
+        public Tilemap tilemap;
 
-    // 向后兼容：保留旧字段，场景中已序列化的旧数据会自动迁移到数组
-    [HideInInspector] [SerializeField] private Tilemap groundTilemap;
+        [Tooltip("该层的材质类型：0=Road, 1=Grass, 2=Water")]
+        public int materialType;
+    }
+
+    [Tooltip("地面 Tilemap 列表（按优先级从高到低排列，索引 0 = 最上层）。\n每一项指定一个 Tilemap 及其对应的脚步声材质类型。")]
+    public TilemapMaterialEntry[] tilemapEntries;
+
+    [Header("调试")]
+    [Tooltip("开启后在 Console 输出详细检测日志")]
+    public bool debugMode = false;
+
+    private static readonly string[] MaterialNames = { "Road(0)", "Grass(1)", "Water(2)" };
+
+    private string GetMaterialName(int type)
+    {
+        return type >= 0 && type < MaterialNames.Length ? MaterialNames[type] : $"Unknown({type})";
+    }
 
     private void Awake()
     {
-        MigrateOldField();
-    }
+        if (!debugMode) return;
 
-    /// <summary>
-    /// 自动迁移：如果旧的 groundTilemap 字段有值且新数组为空，将其迁移到数组中。
-    /// </summary>
-    private void MigrateOldField()
-    {
-        if (groundTilemap != null && (groundTilemaps == null || groundTilemaps.Length == 0))
+        if (tilemapEntries == null || tilemapEntries.Length == 0)
         {
-            groundTilemaps = new Tilemap[] { groundTilemap };
-            groundTilemap = null; // 清除旧引用
-            Debug.Log("[FootstepMaterialDetector] 已自动将旧的 groundTilemap 迁移到 groundTilemaps 数组。");
+            Debug.LogWarning("[FootstepDetector] ⚠ tilemapEntries 为空！请在 Inspector 中配置 Tilemap 和材质类型。");
+            return;
+        }
+
+        Debug.Log($"[FootstepDetector] 已配置 {tilemapEntries.Length} 个 Tilemap 层：");
+        for (int i = 0; i < tilemapEntries.Length; i++)
+        {
+            var entry = tilemapEntries[i];
+            string tmName = entry.tilemap != null ? entry.tilemap.gameObject.name : "NULL";
+            Debug.Log($"  [{i}] Tilemap=\"{tmName}\", materialType={GetMaterialName(entry.materialType)}");
         }
     }
 
     /// <summary>
     /// 根据世界坐标获取脚下的材质 ID（对应 FMOD material 参数）。
-    /// 从最高优先级的 Tilemap（索引 0）开始检测，第一个有瓦片的层决定材质。
     /// </summary>
     public int GetMaterialAtPosition(Vector3 worldPos)
     {
-        if (groundTilemaps == null || groundTilemaps.Length == 0)
-            return MATERIAL_ROAD;
-
-        // 从最高优先级（索引 0 = 最上层）向下遍历
-        for (int i = 0; i < groundTilemaps.Length; i++)
+        if (tilemapEntries == null || tilemapEntries.Length == 0)
         {
-            Tilemap tilemap = groundTilemaps[i];
+            if (debugMode) Debug.LogWarning("[FootstepDetector] tilemapEntries 为空，返回默认 Road");
+            return MATERIAL_ROAD;
+        }
+
+        int fallbackMaterial = -1; // 记录第一个非 road 命中
+
+        for (int i = 0; i < tilemapEntries.Length; i++)
+        {
+            Tilemap tilemap = tilemapEntries[i].tilemap;
             if (tilemap == null) continue;
 
             Vector3Int cellPos = tilemap.WorldToCell(worldPos);
@@ -58,27 +80,32 @@ public class FootstepMaterialDetector : MonoBehaviour
 
             if (tile != null)
             {
-                return ClassifyTile(tile.name);
+                int mat = tilemapEntries[i].materialType;
+                if (debugMode)
+                    Debug.Log($"[FootstepDetector] 位置{worldPos} → Tilemap=\"{tilemap.gameObject.name}\" 格子{cellPos} 瓦片=\"{tile.name}\"(type={tile.GetType().Name}) → 材质={GetMaterialName(mat)}");
+
+                // Road 最高优先级，立即返回
+                if (mat == MATERIAL_ROAD)
+                    return MATERIAL_ROAD;
+
+                // 记住第一个非 road 命中，继续检查其他层是否有 road
+                if (fallbackMaterial < 0)
+                    fallbackMaterial = mat;
             }
         }
 
-        // 所有层都没有瓦片，返回默认
-        return MATERIAL_ROAD;
-    }
+        if (fallbackMaterial >= 0)
+        {
+            if (debugMode)
+                Debug.Log($"[FootstepDetector] 位置{worldPos} → 无 Road 重叠，使用 {GetMaterialName(fallbackMaterial)}");
+            return fallbackMaterial;
+        }
 
-    /// <summary>
-    /// 根据瓷砖名称前缀判断材质类型。
-    /// </summary>
-    private int ClassifyTile(string tileName)
-    {
-        if (tileName.StartsWith("草坪")) return MATERIAL_GRASS;
-        if (tileName.StartsWith("直路")) return MATERIAL_ROAD;
-        if (tileName.StartsWith("转角")) return MATERIAL_ROAD;
-        if (tileName.StartsWith("十字路")) return MATERIAL_ROAD;
-        if (tileName.StartsWith("水体")) return MATERIAL_WATER;
-
-        // 未分类瓷砖默认为 road
+        if (debugMode)
+            Debug.LogWarning($"[FootstepDetector] 位置{worldPos} → 所有 {tilemapEntries.Length} 层均无瓦片，返回默认 Road");
         return MATERIAL_ROAD;
     }
 }
+
+
 

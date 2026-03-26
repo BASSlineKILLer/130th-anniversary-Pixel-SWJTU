@@ -274,6 +274,22 @@ public static class NPCApiService
         }
     }
 
+    public static void RemoveCachedImage(int npcId)
+    {
+        string path = GetImageCachePath(npcId);
+        if (!File.Exists(path)) return;
+
+        try
+        {
+            File.Delete(path);
+            Debug.Log($"[NPC] 已清除被撤销 NPC(id={npcId}) 的图片缓存");
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[NPC] 清除图片缓存失败 (id={npcId}): {e.Message}");
+        }
+    }
+
     public static void ClearCache()
     {
         if (Directory.Exists(CacheDir))

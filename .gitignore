@@ -30,9 +30,23 @@
 /[Aa]ssets/Plugins/Editor/JetBrains*
 # Jetbrains Rider personal-layer settings
 *.DotSettings.user
+# JetBrains Rider IDE
+.idea/
 
 # Visual Studio cache directory
 .vs/
+
+# Windsurf IDE
+.windsurf/
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Crash dumps
+sh.exe.stackdump
+*.stackdump
 
 # Gradle cache directory
 .gradle/

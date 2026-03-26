@@ -1,6 +1,5 @@
 using UnityEngine;
 using FMODUnity;
-using FMOD.Studio;
 
 namespace Player
 {
@@ -85,18 +84,13 @@ namespace Player
             if (materialDetector != null)
                 material = materialDetector.GetMaterialAtPosition(transform.position);
 
-            // 创建 FMOD 实例，设置参数，播放
-            EventInstance instance = RuntimeManager.CreateInstance(footstepEvent);
-            instance.setParameterByName(materialParamName, material);
-            instance.set3DAttributes(RuntimeUtils.To3DAttributes(transform.position));
-            instance.start();
-            instance.release();
+            FootstepAudioHelper.Play(footstepEvent, materialParamName, material, transform.position);
         }
 
         private bool IsPlayerMoving()
         {
             if (playerController == null) return false;
-            return playerController.moveInput.sqrMagnitude > 0.001f;
+            return playerController.MoveInput.sqrMagnitude > 0.001f;
         }
     }
 }

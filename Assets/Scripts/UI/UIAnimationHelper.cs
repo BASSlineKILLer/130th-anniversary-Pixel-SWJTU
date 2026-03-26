@@ -67,6 +67,52 @@ namespace SWJTUGame.UI
         }
 
         /// <summary>
+        /// 显示面板并播放音效（封装了面板显示 + 音效播放的通用逻辑）
+        /// 需要在 MonoBehaviour 上通过 StartCoroutine 调用
+        /// </summary>
+        /// <param name="panel">面板 GameObject</param>
+        /// <param name="canvasGroup">面板的 CanvasGroup（可为 null，为 null 时直接 SetActive）</param>
+        /// <param name="fadeDuration">淡入时长</param>
+        public static void ShowPanelWithAudio(MonoBehaviour caller, GameObject panel, CanvasGroup canvasGroup, float fadeDuration)
+        {
+            if (panel == null) return;
+
+            // 播放音效（有专用音效用专用的，否则回退到 Click）
+            if (!string.IsNullOrEmpty(UIAudioManager.Instance?.panelOpenEvent))
+                UIAudioManager.PlayPanelOpen();
+            else
+                UIAudioManager.PlayClick();
+
+            if (canvasGroup != null)
+                caller.StartCoroutine(FadeIn(canvasGroup, fadeDuration));
+            else
+                panel.SetActive(true);
+        }
+
+        /// <summary>
+        /// 隐藏面板并播放音效（封装了面板隐藏 + 音效播放的通用逻辑）
+        /// 需要在 MonoBehaviour 上通过 StartCoroutine 调用
+        /// </summary>
+        /// <param name="panel">面板 GameObject</param>
+        /// <param name="canvasGroup">面板的 CanvasGroup（可为 null，为 null 时直接 SetActive）</param>
+        /// <param name="fadeDuration">淡出时长</param>
+        public static void HidePanelWithAudio(MonoBehaviour caller, GameObject panel, CanvasGroup canvasGroup, float fadeDuration)
+        {
+            if (panel == null) return;
+
+            // 播放音效（有专用音效用专用的，否则回退到 Click）
+            if (!string.IsNullOrEmpty(UIAudioManager.Instance?.panelCloseEvent))
+                UIAudioManager.PlayPanelClose();
+            else
+                UIAudioManager.PlayClick();
+
+            if (canvasGroup != null)
+                caller.StartCoroutine(FadeOut(canvasGroup, fadeDuration));
+            else
+                panel.SetActive(false);
+        }
+
+        /// <summary>
         /// 按钮点击缩放反馈（先缩小再弹回）
         /// </summary>
         /// <param name="target">按钮的 RectTransform</param>

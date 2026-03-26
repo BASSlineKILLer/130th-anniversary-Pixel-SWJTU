@@ -52,6 +52,13 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  maxNPCsPerSpawnPoint: 3
   manualCount: 0
   apiCount: 0
   isLoading: 0

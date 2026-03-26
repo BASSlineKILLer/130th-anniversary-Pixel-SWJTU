@@ -14,6 +14,8 @@ GameObject:
   - component: {fileID: 1256250878174910092}
   - component: {fileID: 3950856510453063583}
   - component: {fileID: 2158159565790023069}
+  - component: {fileID: 3703531025788434302}
+  - component: {fileID: 8217846630398649635}
   m_Layer: 0
   m_Name: player
   m_TagString: Player
@@ -74,8 +76,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -1759705605
+  m_SortingLayer: 7
   m_SortingOrder: 2
   m_Sprite: {fileID: 21300000, guid: ed087b259f934eb4fb39fbe2698e938c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -198,3 +200,46 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1.8226433, y: 1.6110202}
   m_EdgeRadius: 0
+--- !u!114 &3703531025788434302
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3601272971147815199}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e235ab3520b4eee40ac01b335f26908c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dialogueCanvasGroup: {fileID: 0}
+  npcPortraitImage: {fileID: 0}
+  npcNameText: {fileID: 0}
+  npcMessageText: {fileID: 0}
+  typeSpeed: 0.05
+  fadeDuration: 0.15
+  interactKey: 101
+--- !u!114 &8217846630398649635
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3601272971147815199}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca8917c454378cb4684a341dc0208578, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  footstepEvent:
+    Guid:
+      Data1: -1121163156
+      Data2: 1281007394
+      Data3: -1971346294
+      Data4: 2096850046
+    Path: event:/NPC/Step
+  materialParamName: Material
+  materialDetector: {fileID: 0}
+  useAnimationEvent: 0
+  stepDistance: 0.5
+  minInterval: 0.2

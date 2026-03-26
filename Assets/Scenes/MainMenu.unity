@@ -2319,7 +2319,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d34c09be8530965488feadbab17035ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameSceneName: YuhangYu_Test
+  gameSceneName: Scene_1_1
   settingsPanel: {fileID: 1555227672}
   aboutPanel: {fileID: 80070411}
   panelFadeDuration: 0.25
