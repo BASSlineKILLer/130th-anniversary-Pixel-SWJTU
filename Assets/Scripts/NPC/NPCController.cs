@@ -45,6 +45,10 @@ public class NPCController : MonoBehaviour
 
         if (bubbleRoot != null)
             bubbleRoot.SetActive(false);
+
+        // 自动挂载 Y 轴排序
+        if (GetComponent<YSortRenderer>() == null)
+            gameObject.AddComponent<YSortRenderer>();
     }
 
     /// <summary>

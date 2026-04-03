@@ -416,7 +416,7 @@ MonoBehaviour:
   MasterBanks:
   - Master
   Banks:
-  - BGM1
+  - BGM
   - Click
   - Step
   BanksToLoad: []

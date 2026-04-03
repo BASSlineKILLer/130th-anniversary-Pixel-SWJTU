@@ -4,20 +4,27 @@ namespace Player
 {
     /// <summary>
     /// 主控角色移动（俯视角Top-Down），参考星露谷物语
-    /// 支持 WASD 上下左右移动
+    /// 支持 WASD 上下左右移动，按住 Shift 奔跑
     /// </summary>
     public class PlayerController : MonoBehaviour
     {
         [Header("移动设置")]
         public float moveSpeed = 5f;
 
+        [Tooltip("奔跑速度倍率")]
+        public float sprintMultiplier = 1.8f;
+
         private Rigidbody2D rb;
         private Vector2 moveInput;
+        private bool isSprinting;
         private SpriteRenderer spriteRenderer;
         private Animator playerAnim;
 
         /// <summary>当前移动输入向量（供外部只读访问，如 FootstepAudioPlayer）</summary>
         public Vector2 MoveInput => moveInput;
+
+        /// <summary>当前是否在奔跑</summary>
+        public bool IsSprinting => isSprinting;
 
         private void Awake()
         {
@@ -31,6 +38,10 @@ namespace Player
                 rb.gravityScale = 0; // 无重力
                 rb.freezeRotation = true; // 不旋转
             }
+
+            // 自动挂载 Y 轴排序
+            if (GetComponent<YSortRenderer>() == null)
+                gameObject.AddComponent<YSortRenderer>();
         }
 
         private void Update()
@@ -53,14 +64,18 @@ namespace Player
                 moveInput.Normalize();
             }
 
-            // 3. 执行移动和动画逻辑
+            // 3. 检测奔跑输入
+            isSprinting = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
+            // 4. 执行移动和动画逻辑
             PlayerMove();
         }
 
         void PlayerMove()
         {
-            // 使用归一化后的 moveInput 来设置速度
-            rb.velocity = moveInput * moveSpeed;
+            // 使用归一化后的 moveInput 来设置速度，奔跑时乘以倍率
+            float speed = isSprinting ? moveSpeed * sprintMultiplier : moveSpeed;
+            rb.velocity = moveInput * speed;
 
             // 只要有任何移动输入，isMoving 就为 true
             bool isMoving = moveInput.sqrMagnitude > 0.001f;
@@ -68,6 +83,7 @@ namespace Player
             if (playerAnim != null)
             {
                 playerAnim.SetBool("IsMoving", isMoving);
+                playerAnim.SetBool("IsRunning", isMoving && isSprinting);
             }
 
             // 处理翻转：只有在水平移动时才改变缩放
