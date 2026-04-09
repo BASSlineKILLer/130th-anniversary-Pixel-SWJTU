@@ -285,7 +285,7 @@ public class NPCInteraction : MonoBehaviour
         typewriterCoroutine = StartCoroutine(TypewriterRoutine(message));
     }
 
-    private void CloseDialogue()
+    public void CloseDialogue()
     {
         SetDialogueNpcMovementPaused(false);
 
@@ -295,6 +295,9 @@ public class NPCInteraction : MonoBehaviour
             StopCoroutine(typewriterCoroutine);
             typewriterCoroutine = null;
         }
+
+        // 记录当前NPC
+        NPCController tempNPC = dialogueNPC;
 
         state = DialogueState.Idle;
         specialDialogueNPC = null;
@@ -308,7 +311,7 @@ public class NPCInteraction : MonoBehaviour
         }
 
         // 淡出面板
-        StartCoroutine(HideDialoguePanel());
+        StartCoroutine(HideDialoguePanel(tempNPC));
     }
 
     private void CloseDialogueImmediate()
@@ -321,6 +324,12 @@ public class NPCInteraction : MonoBehaviour
             typewriterCoroutine = null;
         }
 
+        // 尝试添加勋章
+        if (dialogueNPC != null && dialogueNPC.Info != null && MedalManager.Instance != null)
+        {
+            MedalManager.Instance.TryAddMedal(dialogueNPC.gameObject.name);
+        }
+
         state = DialogueState.Idle;
         dialogueNPC = null;
         specialDialogueNPC = null;
@@ -331,7 +340,7 @@ public class NPCInteraction : MonoBehaviour
             GameManager.Instance.SetDialogueLock(false);
     }
 
-    private IEnumerator HideDialoguePanel()
+    private IEnumerator HideDialoguePanel(NPCController tempNPC)
     {
         yield return StartCoroutine(UIAnimationHelper.FadeOut(dialogueCanvasGroup, fadeDuration));
 
@@ -340,6 +349,17 @@ public class NPCInteraction : MonoBehaviour
         // 解除对话锁
         if (GameManager.Instance != null)
             GameManager.Instance.SetDialogueLock(false);
+
+        // 尝试添加勋章
+        if (tempNPC != null && MedalManager.Instance != null)
+        {
+            Debug.Log("尝试添加勋章 for NPC: " + tempNPC.gameObject.name);
+            MedalManager.Instance.TryAddMedal(tempNPC.gameObject.name);
+        }
+        else
+        {
+            Debug.Log("无法添加勋章: tempNPC=" + (tempNPC != null) + ", MedalManager.Instance=" + (MedalManager.Instance != null));
+        }
     }
 
     // ==================== 打字机效果 ====================

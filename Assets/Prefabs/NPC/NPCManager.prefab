@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 340952027997795143}
   - component: {fileID: 5792987825417201486}
+  - component: {fileID: 2907527555909981313}
   m_Layer: 0
   m_Name: NPCManager
   m_TagString: Untagged
@@ -62,3 +63,22 @@ MonoBehaviour:
   manualCount: 0
   apiCount: 0
   isLoading: 0
+--- !u!114 &2907527555909981313
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4163986601799415681}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52dfd7dcefef4a57b04604ad7f7fb372, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 2
+  waitTime: 2
+  patrolRadius: 5
+  shouldPatrol: 1
+  obstacleLayer:
+    serializedVersion: 2
+    m_Bits: 0
