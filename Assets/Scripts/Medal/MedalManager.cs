@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic; // Add this for HashSet
+using UnityEngine.Events;
 
 public class MedalManager : MonoBehaviour
 {
@@ -10,6 +11,7 @@ public class MedalManager : MonoBehaviour
     [Header("UI组件")] public TextMeshProUGUI medalText; // 拖入显示数字的Text组件
     public MedalPanel medalPanelComponent; // MedalPanel组件
 
+    public UnityEvent onMedalPanelHidden; // 勋章面板隐藏时的事件
 
     // 数据
     private int totalMedal = 0;
@@ -37,17 +39,10 @@ public class MedalManager : MonoBehaviour
         if (medalPanelComponent != null)
         {
             medalPanelComponent.gameObject.SetActive(false); // 一开始隐藏MedalPanel
+            medalPanelComponent.onPanelHidden.AddListener(MedalPanelHidden);
         }
     }
 
-    private void Update()
-    {
-        // 按E键关闭MedalPanel
-        if (Input.GetKeyDown(KeyCode.E) && medalPanelComponent != null && medalPanelComponent.IsVisible)
-        {
-            StartCoroutine(medalPanelComponent.HidePanelWithFade());
-        }
-    }
 
     /// <summary>
     /// 尝试添加勋章（在对话结束时调用）
@@ -136,4 +131,9 @@ public class MedalManager : MonoBehaviour
         return talkedNPCs.Contains(npcUniqueID);
     }
 
+    private void MedalPanelHidden()
+    {
+        Debug.Log("MedalPanelHidden called, invoking onMedalPanelHidden");
+        onMedalPanelHidden?.Invoke();
+    }
 }
