@@ -87,7 +87,7 @@ public class NPCInteraction : MonoBehaviour
         switch (state)
         {
             case DialogueState.Idle:
-                // 只有按 E 才能开启对话（不响应鼠标点击，避免误触）
+                // 只有按 E 才能���启对话（不响应鼠标点击，避免误触）
                 if (Input.GetKeyDown(interactKey) && closestNPC != null)
                     OpenDialogue(closestNPC);
                 break;
@@ -112,9 +112,7 @@ public class NPCInteraction : MonoBehaviour
 
     // ==================== 最近 NPC 检测 ====================
 
-    /// <summary>
     /// 每帧找出最近的 NPC，只对它显示气泡
-    /// </summary>
     private void UpdateClosestNPC()
     {
         NPCController nearest = null;
@@ -277,7 +275,18 @@ public class NPCInteraction : MonoBehaviour
 
     private IEnumerator ShowDialoguePanel(string message)
     {
-        // 淡入
+        // 显示NPCPanel（仅对特殊NPC）
+        string npcName = dialogueNPC.Info != null ? dialogueNPC.Info.Username : (specialDialogueNPC != null ? specialDialogueNPC.GetName() : dialogueNPC.gameObject.name);
+        if (MedalManager.Instance != null && MedalManager.Instance.data != null && MedalManager.Instance.data.IsSpecialNPC(npcName))
+        {
+            string panelText = MedalManager.Instance.GetPanelText(npcName);
+            if (!string.IsNullOrEmpty(panelText) && MedalManager.Instance.npcPanelComponent != null)
+            {
+                StartCoroutine(MedalManager.Instance.npcPanelComponent.ShowPanelWithFade(panelText));
+            }
+        }
+
+        // 淡入对话面板
         yield return StartCoroutine(UIAnimationHelper.FadeIn(dialogueCanvasGroup, fadeDuration));
 
         // 开始打字机
@@ -327,7 +336,7 @@ public class NPCInteraction : MonoBehaviour
         // 尝试添加勋章
         if (dialogueNPC != null && dialogueNPC.Info != null && MedalManager.Instance != null)
         {
-            MedalManager.Instance.TryAddMedal(dialogueNPC.gameObject.name);
+            MedalManager.Instance.TryAddMedal(dialogueNPC.Info.Username);
         }
 
         state = DialogueState.Idle;
@@ -353,8 +362,9 @@ public class NPCInteraction : MonoBehaviour
         // 尝试添加勋章
         if (tempNPC != null && MedalManager.Instance != null)
         {
-            Debug.Log("尝试添加勋章 for NPC: " + tempNPC.gameObject.name);
-            MedalManager.Instance.TryAddMedal(tempNPC.gameObject.name);
+            string npcName = tempNPC.Info != null ? tempNPC.Info.Username : tempNPC.gameObject.name;
+            Debug.Log("尝试添加勋章 for NPC: " + npcName);
+            MedalManager.Instance.TryAddMedal(npcName);
         }
         else
         {

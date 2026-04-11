@@ -10,12 +10,18 @@ public class MedalManager : MonoBehaviour
 
     [Header("UI组件")] public TextMeshProUGUI medalText; // 拖入显示数字的Text组件
     public MedalPanel medalPanelComponent; // MedalPanel组件
+    public NPCPanel npcPanelComponent; // NPCPanel组件
 
     public UnityEvent onMedalPanelHidden; // 勋章面板隐藏时的事件
+
+    public SpecialNPCData data; // 特殊NPC数据
+
+    [Header("出生点设置")] public Transform spawnPoint; // 出生点位置
 
     // 数据
     private int totalMedal = 0;
     private HashSet<string> talkedNPCs = new HashSet<string>(); // 已对话的NPC记录
+    private List<string> talkedSpecialNPCs = new List<string>(); // 已对话的特殊NPC顺序记录
 
     private void Awake()
     {
@@ -43,10 +49,36 @@ public class MedalManager : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.LeftControl) || Input.GetKeyDown(KeyCode.RightControl))
+        {
+            TeleportToSpawn();
+        }
+    }
 
-    /// <summary>
+    private void TeleportToSpawn()
+    {
+        if (spawnPoint != null)
+        {
+            GameObject player = GameObject.FindWithTag("Player");
+            if (player != null)
+            {
+                player.transform.position = spawnPoint.position;
+                Debug.Log("Player teleported to spawn point");
+            }
+            else
+            {
+                Debug.LogError("Player not found");
+            }
+        }
+        else
+        {
+            Debug.LogError("Spawn point not set");
+        }
+    }
+
     /// 尝试添加勋章（在对话结束时调用）
-    /// </summary>
     /// <param name="npcUniqueID">NPC的唯一标识，如"npc_01"</param>
     /// <returns>是否成功获得勋章</returns>
     public bool TryAddMedal(string npcUniqueID)
@@ -62,16 +94,18 @@ public class MedalManager : MonoBehaviour
 
         // 首次对话，添加勋章
         talkedNPCs.Add(npcUniqueID);
+        talkedSpecialNPCs.Add(npcUniqueID);
         totalMedal++;
         UpdateMedalUI();
 
 
         // 显示MedalPanel
+        string message = "交大勋章 +1！";
         if (medalPanelComponent != null)
         {
             medalPanelComponent.SetMedalCount(totalMedal);
             Debug.Log("Starting ShowPanelWithFade for MedalPanel");
-            StartCoroutine(medalPanelComponent.ShowPanelWithFade("交大勋章 +1！"));
+            StartCoroutine(medalPanelComponent.ShowPanelWithFade(message));
         }
         else
         {
@@ -82,9 +116,7 @@ public class MedalManager : MonoBehaviour
         return true;
     }
 
-    /// <summary>
     /// 更新UI显示
-    /// </summary>
     private void UpdateMedalUI()
     {
         if (medalText != null)
@@ -114,18 +146,14 @@ public class MedalManager : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
         }
     }
-    
-    /// <summary>
+
     /// 获取当前勋章总数（供其他系统使用）
-    /// </summary>
     public int GetMedalCount()
     {
         return totalMedal;
     }
-    
-    /// <summary>
+
     /// 检查某个NPC是否已经对话过
-    /// </summary>
     public bool HasTalkedToNPC(string npcUniqueID)
     {
         return talkedNPCs.Contains(npcUniqueID);
@@ -135,5 +163,21 @@ public class MedalManager : MonoBehaviour
     {
         Debug.Log("MedalPanelHidden called, invoking onMedalPanelHidden");
         onMedalPanelHidden?.Invoke();
+    }
+
+    /// 获取已对话的特殊NPC顺序列表
+    public List<string> GetTalkedSpecialNPCs()
+    {
+        return talkedSpecialNPCs;
+    }
+
+    /// 获取NPC的面板文字
+    public string GetPanelText(string npcName)
+    {
+        if (data != null)
+        {
+            return data.GetPanelText(npcName);
+        }
+        return "";
     }
 }
