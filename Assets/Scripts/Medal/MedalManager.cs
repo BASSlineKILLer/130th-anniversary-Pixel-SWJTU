@@ -22,6 +22,9 @@ public class MedalManager : MonoBehaviour
     private int totalMedal = 0;
     private HashSet<string> talkedNPCs = new HashSet<string>(); // 已对话的NPC记录
     private List<string> talkedSpecialNPCs = new List<string>(); // 已对话的特殊NPC顺序记录
+    
+    // 状态存档：记录图书馆是否已开启，防止过场动画和弹窗重复触发
+    public bool IsLibraryUnlocked { get; set; } = false;
 
     private void Awake()
     {
@@ -179,5 +182,47 @@ public class MedalManager : MonoBehaviour
             return data.GetPanelText(npcName);
         }
         return "";
+    }
+
+    /// <summary>
+    /// 重置所有内存数据，用于开始新游戏时清空状态。
+    /// （DontDestroyOnLoad 的单例不会被销毁，需手动重置）
+    /// </summary>
+    public void ResetForNewGame()
+    {
+        totalMedal = 0;
+        talkedNPCs.Clear();
+        talkedSpecialNPCs.Clear();
+        IsLibraryUnlocked = false;
+        UpdateMedalUI();
+        Debug.Log("[MedalManager] 状态已重置（新游戏）");
+    }
+
+    /// <summary>
+    /// 获取已对话的所有NPC列表（供 SaveManager 序列化用）
+    /// </summary>
+    public HashSet<string> GetTalkedNPCs()
+    {
+        return talkedNPCs;
+    }
+
+    /// <summary>
+    /// 从存档恢复勋章进度
+    /// </summary>
+    public void RestoreFromSave(int medals, List<string> talked, List<string> talkedSpecial, bool libraryUnlocked)
+    {
+        totalMedal = medals;
+        talkedNPCs.Clear();
+        if (talked != null)
+            foreach (var id in talked)
+                talkedNPCs.Add(id);
+
+        talkedSpecialNPCs.Clear();
+        if (talkedSpecial != null)
+            talkedSpecialNPCs.AddRange(talkedSpecial);
+
+        IsLibraryUnlocked = libraryUnlocked;
+        UpdateMedalUI();
+        Debug.Log($"[MedalManager] 从存档恢复: 勋章={totalMedal}, 已对话NPC={talkedNPCs.Count}, 图书馆={libraryUnlocked}");
     }
 }

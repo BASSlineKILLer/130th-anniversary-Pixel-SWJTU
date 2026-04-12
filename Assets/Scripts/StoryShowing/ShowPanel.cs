@@ -12,13 +12,15 @@ public class ShowPanel : MonoBehaviour
 
     public UnityEvent onPanelHidden;
 
-    // Start is called before the first frame update
+    private bool isVisible = false;
+
     void Start()
     {
-        gameObject.SetActive(false);
-    }
-
-    // Update is called once per frame
+        if (!isVisible) 
+        {
+            gameObject.SetActive(false);
+        }
+    }    // Update is called once per frame
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.A))
@@ -41,6 +43,7 @@ public class ShowPanel : MonoBehaviour
     {
         texts = storyTexts;
         currentPage = 0;
+        isVisible = true;
         Debug.Log("ShowPanel.Show called with " + texts.Count + " texts");
         UpdateText();
         gameObject.SetActive(true);
@@ -68,6 +71,7 @@ public class ShowPanel : MonoBehaviour
 
     public void Hide()
     {
+        isVisible = false;
         gameObject.SetActive(false);
         onPanelHidden.Invoke();
     }

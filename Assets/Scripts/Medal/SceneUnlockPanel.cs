@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using TMPro;
 using SWJTUGame.UI; // Add this for UIAnimationHelper
 
@@ -12,19 +12,26 @@ public class SceneUnlockPanel : MonoBehaviour
 
     private void Start()
     {
-        gameObject.SetActive(false); // 确保一开始隐藏
-        if (canvasGroup != null)
+        if (!isVisible)
         {
-            canvasGroup.alpha = 0f;
-            canvasGroup.interactable = false;
-            canvasGroup.blocksRaycasts = false;
+            gameObject.SetActive(false); // 确保一开始隐藏
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 0f;
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+            }
         }
     }
+
+
 
     /// 显示面板并设置文字（带淡入效果）
     /// <param name="message">要显示的消息</param>
     public System.Collections.IEnumerator ShowPanelWithFade(string message)
     {
+        isVisible = true;
+
         // 1. 必须先激活对象，否则无法运行后续逻辑
         gameObject.SetActive(true);
         transform.SetAsLastSibling(); // 确保在最上层
@@ -43,7 +50,6 @@ public class SceneUnlockPanel : MonoBehaviour
             Debug.Log("CanvasGroup is null, panel shown without fade");
         }
 
-        isVisible = true;
         Debug.Log("ShowPanelWithFade completed for SceneUnlockPanel");
 
         // 等待0.7秒后自动消失
@@ -130,6 +136,7 @@ public class SceneUnlockPanel : MonoBehaviour
         {
             panelText.text = message;
         }
+        isVisible = true;
         gameObject.SetActive(true);
         if (canvasGroup != null)
         {
@@ -137,7 +144,6 @@ public class SceneUnlockPanel : MonoBehaviour
             canvasGroup.interactable = true;
             canvasGroup.blocksRaycasts = true;
         }
-        isVisible = true;
         Debug.Log("Panel shown synchronously: " + message);
     }
 }

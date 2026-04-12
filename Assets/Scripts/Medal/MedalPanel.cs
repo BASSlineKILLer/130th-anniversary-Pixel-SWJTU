@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using TMPro;
 using UnityEngine.Events;
 
@@ -15,16 +15,17 @@ public class MedalPanel : MonoBehaviour
 
     private void Start()
     {
-        gameObject.SetActive(false); // 确保一开始隐藏
-        if (canvasGroup != null)
+        if (!isVisible)
         {
-            canvasGroup.alpha = 0f;
-            canvasGroup.interactable = false;
-            canvasGroup.blocksRaycasts = false;
+            gameObject.SetActive(false); // 确保一开始隐藏
+            if (canvasGroup != null)
+            {
+                canvasGroup.alpha = 0f;
+                canvasGroup.interactable = false;
+                canvasGroup.blocksRaycasts = false;
+            }
         }
-    }
-
-    /// 显示面板并设置文字（同步）
+    }    /// 显示面板并设置文字（同步）
     /// <param name="message">要显示的消息</param>
     public void ShowPanel(string message)
     {
@@ -32,8 +33,8 @@ public class MedalPanel : MonoBehaviour
         {
             panelText.text = message;
         }
-        gameObject.SetActive(true);
         isVisible = true;
+        gameObject.SetActive(true);
     }
 
     /// 隐藏面板（同步）
@@ -48,6 +49,9 @@ public class MedalPanel : MonoBehaviour
     public System.Collections.IEnumerator ShowPanelWithFade(string message)
     {
         Debug.Log("ShowPanelWithFade started, canvasGroup=" + (canvasGroup != null));
+
+        // 提前设置标志位，防止被自身立刻隐藏（解决Start()延迟执行导致被吞掉的Bug）
+        isVisible = true;
 
         // 设置文字
         if (panelText != null)
@@ -64,7 +68,6 @@ public class MedalPanel : MonoBehaviour
             yield return StartCoroutine(FadeIn(canvasGroup, fadeDuration));
         }
 
-        isVisible = true;
         Debug.Log("ShowPanelWithFade completed");
 
         // 等待1秒后自动消失

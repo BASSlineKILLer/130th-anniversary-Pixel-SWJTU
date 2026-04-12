@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
 /// 游戏管理器（单例）
@@ -60,6 +60,18 @@ public class GameManager : MonoBehaviour
         Time.timeScale = 1f; // 恢复游戏时间
         Debug.Log("Game Resumed");
         // 这里可以添加隐藏暂停菜单的代码
+    }
+
+    /// <summary>
+    /// 重置所有游戏状态（返回主菜单或开始新游戏时调用）
+    /// 避免暂停、对话锁等状态跨局残留。
+    /// </summary>
+    public void ResetForNewGame()
+    {
+        isPaused = false;
+        isDialogueLocked = false;
+        Time.timeScale = 1f;
+        Debug.Log("[GameManager] 状态已重置（新游戏/返回主菜单）");
     }
 
     /// <summary>

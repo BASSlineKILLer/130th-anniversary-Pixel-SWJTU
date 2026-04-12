@@ -81,6 +81,20 @@ namespace SWJTUGame.UI
             // 恢复时间（防止主菜单场景中时间仍暂停）
             Time.timeScale = 1f;
 
+            // 返回主菜单前，自动保存当前进度（避免在未踩存档点的情况下丢失进度）
+            if (SaveManager.Instance != null)
+            {
+                var player = GameObject.FindGameObjectWithTag("Player");
+                if (player != null)
+                {
+                    SaveManager.Instance.Save(SceneManager.GetActiveScene().name, player.transform.position, "manual_save");
+                }
+            }
+
+            // 重置暂停状态，防止下次进入游戏时暂停菜单自动弹出
+            if (GameManager.Instance != null)
+                GameManager.Instance.ResetForNewGame();
+
             if (string.IsNullOrEmpty(mainMenuSceneName))
             {
                 Debug.LogWarning("[PauseMenuManager] 未设置主菜单场景名称！请在 Inspector 中配置。");

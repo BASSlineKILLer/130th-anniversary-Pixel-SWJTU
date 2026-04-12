@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace SWJTUGame.UI
 {
@@ -16,6 +17,10 @@ namespace SWJTUGame.UI
         [Tooltip("新游戏的初始出生点 ID")]
         public string newGameSpawnPointId = "start";
 
+        [Header("按钮引用")]
+        [Tooltip("继续游戏按钮 — 没有存档时自动隐藏")]
+        public GameObject continueButton;
+
         [Header("UI 面板引用（可选）")]
         [Tooltip("设置面板 — 留空则跳过设置功能")]
         public GameObject settingsPanel;
@@ -23,12 +28,16 @@ namespace SWJTUGame.UI
         [Tooltip("关于面板 — 留空则跳过关于功能")]
         public GameObject aboutPanel;
 
+        [Tooltip("确认新游戏面板 — 存在存档时点新游戏弹出")]
+        public GameObject confirmNewGamePanel;
+
         [Header("动画设置")]
         [Tooltip("面板淡入淡出时长（秒）")]
         public float panelFadeDuration = 0.25f;
 
         private CanvasGroup settingsCanvasGroup;
         private CanvasGroup aboutCanvasGroup;
+        private CanvasGroup confirmCanvasGroup;
 
         private void Awake()
         {
@@ -39,9 +48,13 @@ namespace SWJTUGame.UI
             if (aboutPanel != null)
                 aboutCanvasGroup = aboutPanel.GetComponent<CanvasGroup>();
 
+            if (confirmNewGamePanel != null)
+                confirmCanvasGroup = confirmNewGamePanel.GetComponent<CanvasGroup>();
+
             // 确保面板初始状态为隐藏
             HidePanelImmediate(settingsPanel);
             HidePanelImmediate(aboutPanel);
+            HidePanelImmediate(confirmNewGamePanel);
         }
 
         private void Start()
@@ -49,12 +62,15 @@ namespace SWJTUGame.UI
             // 确保主菜单中时间是正常流动的
             // （防止从暂停的游戏场景返回时 timeScale 仍为 0）
             Time.timeScale = 1f;
+
+            // 根据是否有存档来显示/隐藏"继续游戏"按钮
+            UpdateContinueButton();
         }
 
         // ===== 按钮回调方法（在 Inspector 中绑定到 Button.OnClick） =====
 
         /// <summary>
-        /// 新游戏（清除旧存档）
+        /// 新游戏按钮 — 如有存档弹确认框，没有则直接开始
         /// </summary>
         public void OnStartGame()
         {
@@ -64,13 +80,40 @@ namespace SWJTUGame.UI
                 return;
             }
 
-            if (SaveManager.Instance != null)
-                SaveManager.Instance.DeleteSave();
+            // 如果有存档，弹确认框
+            if (SaveManager.Instance != null && SaveManager.Instance.HasSave())
+            {
+                if (confirmNewGamePanel != null)
+                {
+                    ShowPanel(confirmNewGamePanel, confirmCanvasGroup);
+                }
+                else
+                {
+                    Debug.LogWarning("[MainMenuManager] 未在 Inspector 中配置 confirmNewGamePanel！直接覆盖存档开始新游戏。");
+                    StartNewGame();
+                }
+                return;
+            }
 
-            if (SceneTransitionManager.Instance != null)
-                SceneTransitionManager.Instance.TransitionToScene(gameSceneName, newGameSpawnPointId);
-            else
-                SceneManager.LoadScene(gameSceneName);
+            // 没有存档，直接开始新游戏
+            StartNewGame();
+        }
+
+        /// <summary>
+        /// 确认新游戏（确认面板的"确认"按钮调用）
+        /// </summary>
+        public void OnConfirmNewGame()
+        {
+            HidePanel(confirmNewGamePanel, confirmCanvasGroup);
+            StartNewGame();
+        }
+
+        /// <summary>
+        /// 取消新游戏（确认面板的"取消"按钮调用）
+        /// </summary>
+        public void OnCancelNewGame()
+        {
+            HidePanel(confirmNewGamePanel, confirmCanvasGroup);
         }
 
         /// <summary>
@@ -90,6 +133,13 @@ namespace SWJTUGame.UI
                 Debug.LogWarning("[MainMenuManager] 存档数据无效");
                 return;
             }
+
+            // 恢复勋章进度到 MedalManager
+            SaveManager.Instance.RestoreMedalData(data);
+
+            // 重置 GameManager 状态（清除上一局可能残留的暂停/锁定）
+            if (GameManager.Instance != null)
+                GameManager.Instance.ResetForNewGame();
 
             SceneTransitionManager.Instance.LoadFromSave(data);
         }
@@ -141,6 +191,39 @@ namespace SWJTUGame.UI
 
         // ===== 内部方法 =====
 
+        /// <summary>
+        /// 执行新游戏：清除存档 + 重置单例状态 + 加载场景
+        /// </summary>
+        private void StartNewGame()
+        {
+            // 清除存档文件
+            if (SaveManager.Instance != null)
+                SaveManager.Instance.DeleteSave();
+
+            // 重置所有持久化单例的内存状态，确保真正的新游戏
+            if (GameManager.Instance != null)
+                GameManager.Instance.ResetForNewGame();
+            if (MedalManager.Instance != null)
+                MedalManager.Instance.ResetForNewGame();
+
+            if (SceneTransitionManager.Instance != null)
+                SceneTransitionManager.Instance.TransitionToScene(gameSceneName, newGameSpawnPointId);
+            else
+                SceneManager.LoadScene(gameSceneName);
+        }
+
+        /// <summary>
+        /// 根据是否有存档来决定"继续游戏"按钮的显隐
+        /// </summary>
+        private void UpdateContinueButton()
+        {
+            if (continueButton != null)
+            {
+                bool hasSave = SaveManager.Instance != null && SaveManager.Instance.HasSave();
+                continueButton.SetActive(hasSave);
+            }
+        }
+
         private void ShowPanel(GameObject panel, CanvasGroup canvasGroup)
         {
             UIAnimationHelper.ShowPanelWithAudio(this, panel, canvasGroup, panelFadeDuration);
@@ -158,3 +241,4 @@ namespace SWJTUGame.UI
         }
     }
 }
+

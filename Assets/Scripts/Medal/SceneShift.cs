@@ -8,7 +8,7 @@ public class SceneShift : MonoBehaviour
     public GameObject libraryPortal; // 拖入图书馆传送物体
     public int requiredMedalCount = 5; // 需要的勋章数量，可以在Unity Inspector中修改
 
-    private bool libraryUnlocked = false;
+
 
     // Start is called before the first frame update
     void Start()
@@ -18,23 +18,31 @@ public class SceneShift : MonoBehaviour
         {
             MedalManager.Instance.onMedalPanelHidden.AddListener(CheckForSceneUnlock);
             Debug.Log("Subscribed to onMedalPanelHidden");
+
+            // 根据持久化状态初始化传送门
+            if (libraryPortal != null)
+            {
+                libraryPortal.SetActive(MedalManager.Instance.IsLibraryUnlocked);
+            }
         }
-        if (libraryPortal != null)
-        {
-            libraryPortal.SetActive(false);
-        }
-        // 移除对sceneUnlockPanel.gameObject.SetActive(false)的调用，因为SceneUnlockPanel自己会在Start中处理初始隐藏
     }
 
     // Update is called once per frame
 
     private void CheckForSceneUnlock()
     {
-        Debug.Log("CheckForSceneUnlock called, medal count: " + MedalManager.Instance.GetMedalCount() + ", unlocked: " + libraryUnlocked);
-        if (MedalManager.Instance.GetMedalCount() >= requiredMedalCount && !libraryUnlocked)
+        if (MedalManager.Instance == null) return;
+
+        int currentMedals = MedalManager.Instance.GetMedalCount();
+        bool alreadyUnlocked = MedalManager.Instance.IsLibraryUnlocked;
+
+        Debug.Log($"CheckForSceneUnlock: medals={currentMedals}, required={requiredMedalCount}, alreadyUnlocked={alreadyUnlocked}");
+
+        if (currentMedals >= requiredMedalCount && !alreadyUnlocked)
         {
-            libraryUnlocked = true;
-            Debug.Log("Unlocking library");
+            MedalManager.Instance.IsLibraryUnlocked = true;
+            Debug.Log("Unlocking library for the first time");
+
             if (libraryPortal != null)
             {
                 libraryPortal.SetActive(true);

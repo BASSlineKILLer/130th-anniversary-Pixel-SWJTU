@@ -51,7 +51,7 @@ public class NpcSearch : MonoBehaviour
         {
             isInRange = false;
             // 如果正在搜索，不关闭面板
-            if (!isSearching)
+            if (!isSearching && searchPanel != null)
             {
                 searchPanel.SetActive(false);
             }
@@ -118,8 +118,8 @@ public class NpcSearch : MonoBehaviour
 
     private void ClosePanel()
     {
-        searchPanel.SetActive(false);
-        errorPanel.SetActive(false);
+        if (searchPanel != null) searchPanel.SetActive(false);
+        if (errorPanel != null) errorPanel.SetActive(false);
         isSearching = false;
         GameManager.Instance?.SetDialogueLock(false);
     }
