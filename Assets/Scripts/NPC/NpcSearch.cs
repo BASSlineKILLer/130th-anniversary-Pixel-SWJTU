@@ -30,11 +30,34 @@ public class NpcSearch : MonoBehaviour
             Debug.LogError("未找到 Player 对象，请确保 Player 有 'Player' 标签");
         }
 
-        searchPanel.SetActive(false);
-        errorPanel.SetActive(false);
+        AutoFindReferences();
 
-        // 添加输入结束监听，按 Enter 键触发搜索
-        searchInput.onEndEdit.AddListener(OnSearch);
+        if (searchPanel != null) searchPanel.SetActive(false);
+        if (errorPanel != null) errorPanel.SetActive(false);
+
+        if (searchInput != null)
+            searchInput.onEndEdit.AddListener(OnSearch);
+    }
+
+    /// <summary>
+    /// 引用为空时自动从 SearchCanvas 中查找子面板
+    /// </summary>
+    private void AutoFindReferences()
+    {
+        if (searchPanel != null && errorPanel != null && searchInput != null)
+            return;
+
+        var canvas = GameObject.Find("SearchCanvas");
+        if (canvas == null) return;
+
+        if (searchPanel == null)
+            searchPanel = canvas.transform.Find("SearchPanel")?.gameObject;
+        if (errorPanel == null)
+            errorPanel = canvas.transform.Find("ErrorPanel")?.gameObject;
+        if (searchInput == null)
+            searchInput = canvas.GetComponentInChildren<TMP_InputField>(true);
+        if (errorText == null && errorPanel != null)
+            errorText = errorPanel.GetComponentInChildren<TextMeshProUGUI>(true);
     }
 
     void OnTriggerEnter2D(Collider2D other)

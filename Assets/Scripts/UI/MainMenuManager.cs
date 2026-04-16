@@ -18,8 +18,8 @@ namespace SWJTUGame.UI
         public string newGameSpawnPointId = "start";
 
         [Header("按钮引用")]
-        [Tooltip("继续游戏按钮 — 没有存档时自动隐藏")]
-        public GameObject continueButton;
+        [Tooltip("继续游戏按钮 — 没有存档时变为灰色不可交互")]
+        public Button continueButton;
 
         [Header("UI 面板引用（可选）")]
         [Tooltip("设置面板 — 留空则跳过设置功能")]
@@ -212,15 +212,23 @@ namespace SWJTUGame.UI
                 SceneManager.LoadScene(gameSceneName);
         }
 
+        private static readonly Color COLOR_BUTTON_ENABLED = new Color(1f, 1f, 1f);      // FFFFFF
+        private static readonly Color COLOR_BUTTON_DISABLED = new Color(0.549f, 0.549f, 0.549f); // 8C8C8C
+
         /// <summary>
-        /// 根据是否有存档来决定"继续游戏"按钮的显隐
+        /// 根据是否有存档来决定"继续游戏"按钮的交互状态和颜色
+        /// 有存档：白色(FFFFFF)可点击；无存档：灰色(8C8C8C)不可交互
         /// </summary>
         private void UpdateContinueButton()
         {
             if (continueButton != null)
             {
                 bool hasSave = SaveManager.Instance != null && SaveManager.Instance.HasSave();
-                continueButton.SetActive(hasSave);
+                continueButton.interactable = hasSave;
+
+                Image buttonImage = continueButton.GetComponent<Image>();
+                if (buttonImage != null)
+                    buttonImage.color = hasSave ? COLOR_BUTTON_ENABLED : COLOR_BUTTON_DISABLED;
             }
         }
 

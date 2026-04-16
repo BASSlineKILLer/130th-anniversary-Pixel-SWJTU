@@ -24,23 +24,12 @@ namespace SWJTUGame.UI
         [Tooltip("缩放过渡速度")]
         public float scaleSpeed = 10f;
 
-        [Header("颜色设置（可选）")]
-        [Tooltip("如果挂载了 Image/Text 组件，悬停时叠加此颜色偏移")]
-        public Color hoverColorTint = new Color(1f, 1f, 1f, 1f);
-
         private Vector3 originalScale;
         private float targetScale = 1f;
-        private Graphic graphic; // Image 或 Text 等 UI 组件
-        private Color originalColor;
 
         private void Awake()
         {
             originalScale = transform.localScale;
-            graphic = GetComponent<Graphic>();
-            if (graphic != null)
-            {
-                originalColor = graphic.color;
-            }
         }
 
         private void Update()
@@ -53,19 +42,11 @@ namespace SWJTUGame.UI
         public void OnPointerEnter(PointerEventData eventData)
         {
             targetScale = hoverScale;
-            if (graphic != null)
-            {
-                graphic.color = hoverColorTint;
-            }
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
             targetScale = 1f;
-            if (graphic != null)
-            {
-                graphic.color = originalColor;
-            }
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -85,10 +66,6 @@ namespace SWJTUGame.UI
             // 重置状态，防止禁用时卡在缩放中间态
             transform.localScale = originalScale;
             targetScale = 1f;
-            if (graphic != null)
-            {
-                graphic.color = originalColor;
-            }
         }
     }
 }
