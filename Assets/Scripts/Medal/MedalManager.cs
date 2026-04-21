@@ -13,6 +13,7 @@ public class MedalManager : MonoBehaviour
     public NPCPanel npcPanelComponent; // NPCPanel组件
 
     public UnityEvent onMedalPanelHidden; // 勋章面板隐藏时的事件
+    public UnityEvent onMedalCountChanged; // 勋章数量变化时的事件
 
     public SpecialNPCData data; // 特殊NPC数据
 
@@ -100,7 +101,7 @@ public class MedalManager : MonoBehaviour
         talkedSpecialNPCs.Add(npcUniqueID);
         totalMedal++;
         UpdateMedalUI();
-
+        onMedalCountChanged?.Invoke();
 
         // 显示MedalPanel
         string message = "交大勋章 +1！";
@@ -223,6 +224,7 @@ public class MedalManager : MonoBehaviour
 
         IsLibraryUnlocked = libraryUnlocked;
         UpdateMedalUI();
+        onMedalCountChanged?.Invoke();
         Debug.Log($"[MedalManager] 从存档恢复: 勋章={totalMedal}, 已对话NPC={talkedNPCs.Count}, 图书馆={libraryUnlocked}");
     }
 }

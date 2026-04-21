@@ -38,17 +38,12 @@ public class ShowManager : MonoBehaviour
 
     private void Update()
     {
-        if (playerInTrigger)
-        {
-            bool isSpaceDown = Input.GetKey(KeyCode.Space);
-            Debug.Log("Space key: " + isSpaceDown);
-            if (isSpaceDown && !wasSpacePressed)
-            {
-                Debug.Log("Space pressed, calling ShowStory");
-                ShowStory();
-            }
-            wasSpacePressed = isSpaceDown;
-        }
+        if (!playerInTrigger) return;
+
+        bool isSpaceDown = Input.GetKey(KeyCode.Space);
+        if (isSpaceDown && !wasSpacePressed)
+            ShowStory();
+        wasSpacePressed = isSpaceDown;
     }
 
     private void ShowStory()

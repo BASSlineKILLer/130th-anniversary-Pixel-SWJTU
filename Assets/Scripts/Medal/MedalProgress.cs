@@ -19,30 +19,36 @@ public class MedalProgress : MonoBehaviour
     void Start()
     {
         UpdateProgress();
-        // 禁用 Slider 的用户交互
+
         if (progressSlider != null)
             progressSlider.interactable = false;
-        // 默认隐藏面板（使用 scale）
+
         transform.localScale = Vector3.zero;
+
+        if (MedalManager.Instance != null)
+            MedalManager.Instance.onMedalCountChanged.AddListener(UpdateProgress);
+    }
+
+    void OnDestroy()
+    {
+        if (MedalManager.Instance != null)
+            MedalManager.Instance.onMedalCountChanged.RemoveListener(UpdateProgress);
     }
 
     void Update()
     {
-        UpdateProgress();
-        // 按 Tab 键切换面板显示/隐藏
-        if (Input.GetKeyDown(KeyCode.Tab))
-        {
-            bool willShow = transform.localScale == Vector3.zero;
-            if (willShow)
-            {
-                LockMovement();
-            }
-            else
-            {
-                UnlockMovement();
-            }
-            transform.localScale = willShow ? Vector3.one : Vector3.zero;
-        }
+        if (!Input.GetKeyDown(KeyCode.Tab)) return;
+
+        bool willShow = transform.localScale == Vector3.zero;
+        if (willShow)
+            LockMovement();
+        else
+            UnlockMovement();
+
+        transform.localScale = willShow ? Vector3.one : Vector3.zero;
+
+        if (willShow)
+            UpdateProgress();
     }
 
     void UpdateProgress()
