@@ -241,4 +241,9 @@ public class NPCManager : MonoBehaviour
         apiCount = 0;
         Debug.Log("[NPCManager] 所有 NPC 已清除");
     }
+
+    /// <summary>
+    /// 获取当前场景中普通 NPC 的总数
+    /// </summary>
+    public int TotalNPCs => spawnedNPCs.Count;
 }
