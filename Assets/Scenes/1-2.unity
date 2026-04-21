@@ -20924,7 +20924,7 @@ GameObject:
   - component: {fileID: 503897575}
   - component: {fileID: 503897574}
   m_Layer: 0
-  m_Name: scene1_ToLake
+  m_Name: 1-2 westDown
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -20939,8 +20939,8 @@ Transform:
   m_GameObject: {fileID: 503897572}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -27.17, y: 22.01, z: 0}
-  m_LocalScale: {x: 1, y: 1.1615624, z: 1}
+  m_LocalPosition: {x: -27.17, y: 22.34, z: 0}
+  m_LocalScale: {x: 1, y: 3.6734412, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1489181406}
@@ -21161,7 +21161,7 @@ GameObject:
   - component: {fileID: 524403621}
   - component: {fileID: 524403620}
   m_Layer: 0
-  m_Name: scene1_ToLake (2)
+  m_Name: 1-2 east
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -21176,8 +21176,8 @@ Transform:
   m_GameObject: {fileID: 524403618}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 17.45, y: 26.77, z: 0}
-  m_LocalScale: {x: 1, y: 11.601226, z: 1}
+  m_LocalPosition: {x: 17.45, y: 26.84, z: 0}
+  m_LocalScale: {x: 1, y: 12.888237, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1489181406}
@@ -22893,6 +22893,8 @@ MonoBehaviour:
   searchPanel: {fileID: 0}
   errorPanel: {fileID: 0}
   errorText: {fileID: 0}
+  requiredMedalCount: 5
+  lockedHintTemplate: "\u9700\u8981\u6536\u96C6 {0} \u679A\u52CB\u7AE0\u624D\u80FD\u89E3\u9501\u641C\u7D22\u529F\u80FD"
 --- !u!61 &901333081
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -23136,7 +23138,7 @@ TilemapRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: -452991329
-  m_SortingLayer: 2
+  m_SortingLayer: 3
   m_SortingOrder: 0
   m_ChunkSize: {x: 32, y: 32, z: 32}
   m_ChunkCullingBounds: {x: 0, y: 0, z: 0}
@@ -70596,7 +70598,7 @@ GameObject:
   - component: {fileID: 1742415588}
   - component: {fileID: 1742415587}
   m_Layer: 0
-  m_Name: scene1_ToLake (1)
+  m_Name: 1-2 westUp
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -70612,7 +70614,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -27.16, y: 31.39, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1, y: 3.795, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1489181406}

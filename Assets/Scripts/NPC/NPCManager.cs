@@ -14,10 +14,8 @@ public class NPCManager : MonoBehaviour
     [Header("NPC 生成配置")]
     [Tooltip("NPC Prefab 在 Resources 中的路径（不含扩展名）")]
     public string npcPrefabPath = "NPCData/NPC";
-    [Tooltip("预定义生成点位，NPC 随机分配到各点位")]
+    [Tooltip("预定义生成点位，NPC 按分配列表的索引确定性分配到点位")]
     public List<Transform> spawnPoints = new List<Transform>();
-    [Tooltip("每个出生点最多容纳的 NPC 数量")]
-    [Min(1)] public int maxNPCsPerSpawnPoint = 1;
 
     [Header("状态（只读）")]
     [SerializeField] private int spawnedCount;
@@ -25,7 +23,6 @@ public class NPCManager : MonoBehaviour
     private GameObject npcPrefab;
     private Transform npcParent;
     private Dictionary<int, GameObject> spawnedNPCs = new Dictionary<int, GameObject>();
-    private Dictionary<int, int> spawnPointUsage = new Dictionary<int, int>();
 
     private void Awake()
     {
@@ -46,12 +43,12 @@ public class NPCManager : MonoBehaviour
 
     private void Start()
     {
-        InitSpawnPointUsage();
         SpawnFromDistributor();
     }
 
     /// <summary>
-    /// 从 NPCDistributor 获取本场景的 NPC 子集并生成
+    /// 从 NPCDistributor 获取本场景的 NPC 子集并生成。
+    /// 点位按列表索引确定性分配：NPC i → spawnPoints[i % count]，保证同一局游戏内进出场景位置稳定。
     /// </summary>
     private void SpawnFromDistributor()
     {
@@ -66,19 +63,20 @@ public class NPCManager : MonoBehaviour
         string sceneName = SceneManager.GetActiveScene().name;
         var npcList = NPCDistributor.Instance.GetNPCsForScene(sceneName);
 
-        foreach (var info in npcList)
+        for (int i = 0; i < npcList.Count; i++)
         {
+            var info = npcList[i];
             if (!spawnedNPCs.ContainsKey(info.Id))
-                SpawnNPC(info);
+                SpawnNPC(info, i);
         }
 
         spawnedCount = spawnedNPCs.Count;
         Debug.Log($"[NPCManager] 场景 '{sceneName}' 生成了 {spawnedCount} 个 NPC");
     }
 
-    private bool SpawnNPC(NPCInfo info)
+    private void SpawnNPC(NPCInfo info, int listIndex)
     {
-        Vector3 pos = PickRandomSpawnPosition();
+        Vector3 pos = PickSpawnPositionByIndex(listIndex);
 
         GameObject go = Instantiate(npcPrefab, pos, Quaternion.identity, npcParent);
         var controller = go.GetComponent<NPCController>();
@@ -88,34 +86,24 @@ public class NPCManager : MonoBehaviour
             Debug.LogError("[NPCManager] Prefab 缺少 NPCController！");
 
         spawnedNPCs[info.Id] = go;
-        return true;
     }
 
-    private void InitSpawnPointUsage()
+    private Vector3 PickSpawnPositionByIndex(int npcIndex)
     {
-        spawnPointUsage.Clear();
-        for (int i = 0; i < spawnPoints.Count; i++)
-            spawnPointUsage[i] = 0;
-    }
-
-    private Vector3 PickRandomSpawnPosition()
-    {
-        var available = new List<int>();
-        for (int i = 0; i < spawnPoints.Count; i++)
+        if (spawnPoints.Count == 0)
         {
-            if (spawnPoints[i] != null && spawnPointUsage[i] < maxNPCsPerSpawnPoint)
-                available.Add(i);
-        }
-
-        if (available.Count == 0)
-        {
-            Debug.LogWarning("[NPCManager] 所有出生点已满，NPC 生成在原点");
+            Debug.LogWarning("[NPCManager] 未配置 spawnPoints，NPC 生成在原点");
             return Vector3.zero;
         }
 
-        int chosen = available[Random.Range(0, available.Count)];
-        spawnPointUsage[chosen]++;
-        return spawnPoints[chosen].position;
+        int idx = npcIndex % spawnPoints.Count;
+        var point = spawnPoints[idx];
+        if (point == null)
+        {
+            Debug.LogWarning($"[NPCManager] spawnPoints[{idx}] 为空，NPC 生成在原点");
+            return Vector3.zero;
+        }
+        return point.position;
     }
 
     /// <summary>
@@ -129,7 +117,6 @@ public class NPCManager : MonoBehaviour
                 Destroy(kvp.Value);
         }
         spawnedNPCs.Clear();
-        InitSpawnPointUsage();
         spawnedCount = 0;
     }
 

@@ -28,7 +28,7 @@ public class NPCDistributor : MonoBehaviour
 
     private List<NPCInfo> allNPCs = new List<NPCInfo>();
     private Dictionary<string, List<NPCInfo>> sceneAssignment = new Dictionary<string, List<NPCInfo>>();
-    private bool apiLoaded;
+    private bool distributed;
 
     private void Awake()
     {
@@ -56,7 +56,9 @@ public class NPCDistributor : MonoBehaviour
     public void LoadAndDistribute()
     {
         allNPCs.Clear();
-        apiLoaded = false;
+        sceneAssignment.Clear();
+        distributed = false;
+        IsReady = false;
 
         if (database != null)
         {
@@ -69,44 +71,76 @@ public class NPCDistributor : MonoBehaviour
         }
         else
         {
-            Distribute();
-            IsReady = true;
+            EnsureDistributed();
         }
     }
 
     private IEnumerator FetchAndMerge()
     {
         string url = database != null ? database.apiUrl : "http://devshowcase.site/api/approved";
-        bool firstCallback = true;
 
         yield return NPCApiService.FetchNPCs(
             url,
             onSuccess: apiList =>
             {
                 MergeApiNPCs(apiList);
-                Distribute();
-                IsReady = true;
-
-                if (firstCallback)
-                {
-                    firstCallback = false;
-                    Debug.Log($"[NPCDistributor] 缓存加载完成，共 {allNPCs.Count} 个 NPC");
-                }
-                else
-                {
-                    Debug.Log($"[NPCDistributor] API 刷新完成，共 {allNPCs.Count} 个 NPC");
-                }
+                EnsureDistributed();
+                Debug.Log($"[NPCDistributor] 数据刷新完成，共 {allNPCs.Count} 个 NPC");
             },
             onError: error =>
             {
                 Debug.LogWarning($"[NPCDistributor] API 获取失败: {error}");
-                if (!IsReady)
-                {
-                    Distribute();
-                    IsReady = true;
-                }
+                EnsureDistributed();
             }
         );
+    }
+
+    /// <summary>
+    /// 确保已完成初次分配；若已分配，则把新加入的 NPC 追加到负载最少的场景，避免重新洗牌。
+    /// </summary>
+    private void EnsureDistributed()
+    {
+        if (!distributed)
+        {
+            Distribute();
+        }
+        else
+        {
+            AppendUnassignedNPCs();
+        }
+        IsReady = true;
+    }
+
+    private void AppendUnassignedNPCs()
+    {
+        if (sceneAssignment.Count == 0) return;
+
+        var assignedIds = new HashSet<int>();
+        foreach (var list in sceneAssignment.Values)
+            foreach (var npc in list)
+                assignedIds.Add(npc.Id);
+
+        foreach (var npc in allNPCs)
+        {
+            if (assignedIds.Contains(npc.Id)) continue;
+            string targetScene = FindLeastLoadedScene();
+            sceneAssignment[targetScene].Add(npc);
+        }
+    }
+
+    private string FindLeastLoadedScene()
+    {
+        string minScene = null;
+        int minCount = int.MaxValue;
+        foreach (var kvp in sceneAssignment)
+        {
+            if (kvp.Value.Count < minCount)
+            {
+                minCount = kvp.Value.Count;
+                minScene = kvp.Key;
+            }
+        }
+        return minScene;
     }
 
     /// <summary>
@@ -134,11 +168,11 @@ public class NPCDistributor : MonoBehaviour
     }
 
     /// <summary>
-    /// 重新洗牌并分配（新游戏 / 继续游戏时调用）
+    /// 重新加载并分配（新游戏 / 继续游戏时调用）。同一局游戏内不应再次调用。
     /// </summary>
     public void Redistribute()
     {
-        Distribute();
+        LoadAndDistribute();
     }
 
     private void Distribute()
@@ -148,6 +182,7 @@ public class NPCDistributor : MonoBehaviour
         if (gameSceneNames.Count == 0)
         {
             Debug.LogWarning("[NPCDistributor] gameSceneNames 为空，没有场景可分配 NPC！");
+            distributed = true;
             return;
         }
 
@@ -171,6 +206,7 @@ public class NPCDistributor : MonoBehaviour
             sceneAssignment[sceneName].Add(shuffled[i]);
         }
 
+        distributed = true;
         Debug.Log($"[NPCDistributor] 已分配 {allNPCs.Count} 个 NPC 到 {gameSceneNames.Count} 个场景");
         foreach (var kvp in sceneAssignment)
             Debug.Log($"  {kvp.Key}: {kvp.Value.Count} 个 NPC");
@@ -186,6 +222,24 @@ public class NPCDistributor : MonoBehaviour
 
         Debug.LogWarning($"[NPCDistributor] 场景 '{sceneName}' 未在 gameSceneNames 中配置");
         return new List<NPCInfo>();
+    }
+
+    /// <summary>
+    /// 跨场景按用户名查找 NPC 所在的场景名。未找到返回 null。
+    /// </summary>
+    public string FindNPCSceneByName(string username)
+    {
+        if (string.IsNullOrEmpty(username)) return null;
+
+        foreach (var kvp in sceneAssignment)
+        {
+            foreach (var npc in kvp.Value)
+            {
+                if (npc.Username == username)
+                    return kvp.Key;
+            }
+        }
+        return null;
     }
 
     /// <summary>

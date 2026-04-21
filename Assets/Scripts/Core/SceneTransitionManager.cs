@@ -19,6 +19,7 @@ public class SceneTransitionManager : MonoBehaviour
 
     private string pendingSpawnPointId;
     private SaveData pendingSaveData; // 增加用于读档失败或manual_save时的降级定位
+    private string pendingNPCUsername; // 跨场景后定位到指定 NPC 的位置（搜索功能用）
     private float teleportImmunityEndTime;
     private bool shouldPlayOpenOnLoad;
     private bool isTransitioning;
@@ -112,6 +113,35 @@ public class SceneTransitionManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 跨场景传送并定位到指定用户名的 NPC 位置（供搜索功能使用）。
+    /// 场景加载完成后等待 NPCManager 生成 NPC，再传送玩家到目标 NPC 的 Transform。
+    /// </summary>
+    public void TransitionToSceneAndFindNPC(string sceneName, string npcUsername)
+    {
+        StartCoroutine(TransitionToNPCCoroutine(sceneName, npcUsername));
+    }
+
+    private IEnumerator TransitionToNPCCoroutine(string sceneName, string npcUsername)
+    {
+        if (isTransitioning) yield break;
+        isTransitioning = true;
+
+        if (CircleWipeTransition.Instance != null)
+            yield return CircleWipeTransition.Instance.PlayClose();
+
+        var player = FindPlayer();
+        if (player != null)
+            pendingPlayerScaleX = player.localScale.x;
+
+        pendingSpawnPointId = null;
+        pendingSaveData = null;
+        pendingNPCUsername = npcUsername;
+        shouldPlayOpenOnLoad = true;
+        GrantTeleportImmunity();
+        SceneManager.LoadScene(sceneName);
+    }
+
+    /// <summary>
     /// 从存档恢复：加载存档场景并定位到存档位置（带圆形转场）
     /// </summary>
     public void LoadFromSave(SaveData data)
@@ -136,14 +166,14 @@ public class SceneTransitionManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        // 处理玩家定位
-        if (!string.IsNullOrEmpty(pendingSpawnPointId))
+        // 分支 1：跨场景传送到指定 NPC（由 PlayOpenAndFinishTransition 协程处理定位）
+        // 分支 2：普通 spawnPoint / 存档定位
+        if (string.IsNullOrEmpty(pendingNPCUsername) && !string.IsNullOrEmpty(pendingSpawnPointId))
         {
             PlacePlayerAtSpawnPoint(pendingSpawnPointId);
             pendingSpawnPointId = null;
-            pendingSaveData = null; // 用完后清空
+            pendingSaveData = null;
             GrantTeleportImmunity();
-
 
             var player = FindPlayer();
             if (player != null)
@@ -160,21 +190,51 @@ public class SceneTransitionManager : MonoBehaviour
 
     private IEnumerator PlayOpenAndFinishTransition()
     {
-        // 等两帧让 Cinemachine 的 LateUpdate 完全就位
+        // 等两帧让 Cinemachine 的 LateUpdate 完全就位 + NPCManager.Start 执行完
         yield return null;
         yield return null;
 
-        // 再次强制对齐相机到玩家，防止 Cinemachine damping 导致偏移
+        // 若是搜索跨场景传送，此时 NPCManager 已生成完 NPC，定位玩家到目标 NPC
+        if (!string.IsNullOrEmpty(pendingNPCUsername))
+        {
+            PlacePlayerAtNPC(pendingNPCUsername);
+            pendingNPCUsername = null;
+            GrantTeleportImmunity();
+        }
+
+        // 强制对齐相机到玩家，防止 Cinemachine damping 导致偏移
         var player = FindPlayer();
         if (player != null)
             SnapCamera(player);
 
-        // 再等一帧让 SnapCamera 的效果生效
         yield return null;
 
         if (CircleWipeTransition.Instance != null)
             yield return CircleWipeTransition.Instance.PlayOpen();
         isTransitioning = false;
+    }
+
+    private void PlacePlayerAtNPC(string npcUsername)
+    {
+        var player = FindPlayer();
+        if (player == null) return;
+
+        var npcs = FindObjectsOfType<NPCController>();
+        foreach (var npc in npcs)
+        {
+            if (npc.Info != null && npc.Info.Username == npcUsername)
+            {
+                player.position = new Vector3(npc.transform.position.x, npc.transform.position.y, player.position.z);
+                if (pendingPlayerScaleX.HasValue)
+                {
+                    player.localScale = new Vector3(pendingPlayerScaleX.Value, player.localScale.y, player.localScale.z);
+                    pendingPlayerScaleX = null;
+                }
+                Debug.Log($"[SceneTransition] 已跨场景传送到 NPC '{npcUsername}'");
+                return;
+            }
+        }
+        Debug.LogWarning($"[SceneTransition] 新场景中未找到 NPC '{npcUsername}'，玩家未定位");
     }
 
     private void PlacePlayerAtSpawnPoint(string spawnPointId)

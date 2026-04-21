@@ -209,6 +209,7 @@ namespace SWJTUGame.UI
                 MedalManager.Instance.ResetForNewGame();
             if (NPCDistributor.Instance != null)
                 NPCDistributor.Instance.Redistribute();
+            SearchLockState.ResetForNewGame();
 
             if (SceneTransitionManager.Instance != null)
                 SceneTransitionManager.Instance.TransitionToScene(gameSceneName, newGameSpawnPointId);

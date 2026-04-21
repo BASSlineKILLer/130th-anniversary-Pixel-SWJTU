@@ -3,6 +3,31 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
+/// <summary>
+/// 搜索功能锁的对接 API。
+/// 任务系统 / 剧情系统完成特定条件后，调用 <see cref="UnlockByQuest"/> 即可解锁搜索功能。
+/// 解锁条件为 OR 关系：勋章数达标 或 任务已解锁 任一满足即解锁。
+/// </summary>
+public static class SearchLockState
+{
+    /// <summary>任务系统解锁开关。默认 false，解锁后在同一局游戏内保持 true。</summary>
+    public static bool QuestUnlocked { get; private set; }
+
+    /// <summary>任务完成时调用：永久解锁（本局游戏内）。</summary>
+    public static void UnlockByQuest()
+    {
+        if (QuestUnlocked) return;
+        QuestUnlocked = true;
+        UnityEngine.Debug.Log("[SearchLockState] 搜索功能已由任务系统解锁");
+    }
+
+    /// <summary>新游戏 / 存档切换时重置。</summary>
+    public static void ResetForNewGame()
+    {
+        QuestUnlocked = false;
+    }
+}
+
 public class NpcSearch : MonoBehaviour
 {
     [Header("UI 组件")]
@@ -17,6 +42,16 @@ public class NpcSearch : MonoBehaviour
 
     [Tooltip("错误文本")]
     public TextMeshProUGUI errorText;
+
+    [Header("功能锁（AND 关系：勋章 + 剧情，两者都满足才解锁）")]
+    [Tooltip("解锁搜索功能所需的勋章数量")]
+    [Min(0)] public int requiredMedalCount = 5;
+
+    [Tooltip("勋章不足时显示的提示，{0} 会被替换为所需勋章数")]
+    [TextArea] public string medalLockedHint = "需要收集 {0} 枚勋章才能解锁搜索功能";
+
+    [Tooltip("关键剧情未触发时显示的提示")]
+    [TextArea] public string storyLockedHint = "完成关键剧情后才能解锁搜索功能";
 
     private bool isInRange = false;
     private bool isSearching = false;
@@ -90,7 +125,14 @@ public class NpcSearch : MonoBehaviour
         }
         else if (isInRange && Input.GetKeyDown(KeyCode.Space))
         {
-            // 如果在范围内且未搜索，按 Space 显示面板
+            // 功能锁：勋章和剧情必须都满足，否则按优先级给对应提示
+            string lockedReason = GetLockedReason();
+            if (lockedReason != null)
+            {
+                ShowHint(lockedReason);
+                return;
+            }
+
             searchPanel.SetActive(true);
             searchInput.ActivateInputField();
             isSearching = true;
@@ -98,45 +140,75 @@ public class NpcSearch : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 返回未解锁的原因提示；已解锁返回 null。
+    /// 优先级：勋章不足 > 剧情未触发。
+    /// </summary>
+    private string GetLockedReason()
+    {
+        if (!IsMedalUnlocked())
+            return string.Format(medalLockedHint, requiredMedalCount);
+
+        if (!SearchLockState.QuestUnlocked)
+            return storyLockedHint;
+
+        return null;
+    }
+
+    private bool IsMedalUnlocked()
+    {
+        if (requiredMedalCount <= 0) return true;
+        if (MedalManager.Instance == null) return false;
+        return MedalManager.Instance.GetMedalCount() >= requiredMedalCount;
+    }
+
+    private void ShowHint(string message)
+    {
+        if (errorPanel == null || errorText == null) return;
+
+        errorPanel.SetActive(true);
+        var cg = errorPanel.GetComponent<CanvasGroup>();
+        if (cg != null) cg.alpha = 1f;
+        errorText.text = message;
+        StartCoroutine(HideErrorPanelAfterDelay(1.2f));
+    }
+
     public void OnSearch(string inputText)
     {
         string name = inputText.Trim();
         if (string.IsNullOrEmpty(name)) return;
 
-        GameObject npc = FindNPCByName(name);
-        if (npc != null)
+        // 1. 优先查本场景已生成的 NPC（无需跨场景传送）
+        GameObject localNpc = FindNPCByName(name);
+        if (localNpc != null)
         {
-            // 使用 SceneTransitionManager 进行传送，确保相机跟随和免疫期
             if (SceneTransitionManager.Instance != null)
-            {
-                SceneTransitionManager.Instance.TeleportPlayer(npc.transform.position);
-            }
+                SceneTransitionManager.Instance.TeleportPlayer(localNpc.transform.position);
             else
-            {
-                playerTransform.position = npc.transform.position;
-            }
-            Debug.Log("传送到 NPC: " + name);
+                playerTransform.position = localNpc.transform.position;
+
+            Debug.Log($"[NpcSearch] 同场景传送到 NPC: {name}");
             ClosePanel();
+            return;
         }
-        else
+
+        // 2. 本场景没有 → 查全局分配，跨场景传送
+        if (NPCDistributor.Instance != null)
         {
-            Debug.Log("未找到 NPC: " + name);
-            // 显示错误面板
-            errorPanel.SetActive(true);
-            var errorCanvasGroup = errorPanel.GetComponent<CanvasGroup>();
-            if (errorCanvasGroup != null)
+            string targetScene = NPCDistributor.Instance.FindNPCSceneByName(name);
+            if (!string.IsNullOrEmpty(targetScene) && SceneTransitionManager.Instance != null)
             {
-                errorCanvasGroup.alpha = 1f;
+                ClosePanel();
+                SceneTransitionManager.Instance.TransitionToSceneAndFindNPC(targetScene, name);
+                Debug.Log($"[NpcSearch] 跨场景传送到 '{targetScene}' 的 NPC: {name}");
+                return;
             }
-            errorText.text = "未找到 NPC: " + name;
-
-            // 启动协程，0.5秒后淡出
-            StartCoroutine(HideErrorPanelAfterDelay(0.7f));
-
-            // 不关闭面板，让用户重新输入
-            searchInput.text = "";
-            searchInput.ActivateInputField();
         }
+
+        // 3. 全局也没有 → 提示未找到
+        ShowHint($"未找到 NPC: {name}");
+        searchInput.text = "";
+        searchInput.ActivateInputField();
     }
 
     private void ClosePanel()

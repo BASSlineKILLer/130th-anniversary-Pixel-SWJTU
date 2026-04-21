@@ -47,11 +47,11 @@ TagManager:
   - name: Background
     uniqueID: 2082575185
     locked: 0
-  - name: Grass
-    uniqueID: 3841975967
-    locked: 0
   - name: Water
     uniqueID: 1304633425
+    locked: 0
+  - name: Grass
+    uniqueID: 3841975967
     locked: 0
   - name: Road
     uniqueID: 2591137907
