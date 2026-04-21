@@ -3947,7 +3947,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d34c09be8530965488feadbab17035ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameSceneName: Scene_1_1
+  gameSceneName: 1-1
   newGameSpawnPointId: start
   continueButton: {fileID: 977991906}
   settingsPanel: {fileID: 1555227672}

@@ -42,6 +42,10 @@ namespace Player
             // 自动挂载 Y 轴排序
             if (GetComponent<YSortRenderer>() == null)
                 gameObject.AddComponent<YSortRenderer>();
+
+            // 自动挂载遮挡轮廓
+            if (GetComponent<OcclusionSilhouette>() == null)
+                gameObject.AddComponent<OcclusionSilhouette>();
         }
 
         private void Update()
