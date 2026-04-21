@@ -1,22 +1,15 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
-/// NPC 管理器（单例）
-///
-/// 双数据源架构：
-///   1. 手动条目 —— 从 NPCDatabase 读取，编辑器中可视化配置
-///   2. API 远程  —— 运行时从后端拉取（可在 NPCDatabase 中开关）
-///
-/// NPC Prefab 从 Resources 加载，场景中只需挂载此脚本 + 配置 spawnPoints。
+/// NPC 场景生成器（每个游戏场景一个）。
+/// 不再自行加载数据，而是从 NPCDistributor 获取本场景分配到的 NPC 子集，
+/// 在本场景的 spawnPoints 上生成 GameObject。
 /// </summary>
 public class NPCManager : MonoBehaviour
 {
     public static NPCManager Instance { get; private set; }
-
-    [Header("NPC 数据库")]
-    [Tooltip("拖入 NPCDatabase 资产。留空则自动从 Resources/NPCData/NPCDatabase 加载")]
-    public NPCDatabase database;
 
     [Header("NPC 生成配置")]
     [Tooltip("NPC Prefab 在 Resources 中的路径（不含扩展名）")]
@@ -27,9 +20,7 @@ public class NPCManager : MonoBehaviour
     [Min(1)] public int maxNPCsPerSpawnPoint = 1;
 
     [Header("状态（只读）")]
-    [SerializeField] private int manualCount;
-    [SerializeField] private int apiCount;
-    [SerializeField] private bool isLoading;
+    [SerializeField] private int spawnedCount;
 
     private GameObject npcPrefab;
     private Transform npcParent;
@@ -45,19 +36,10 @@ public class NPCManager : MonoBehaviour
         }
         Instance = this;
 
-        // 自动加载数据库
-        if (database == null)
-            database = Resources.Load<NPCDatabase>("NPCData/NPCDatabase");
-
-        if (database == null)
-            Debug.LogWarning("[NPCManager] 未找到 NPCDatabase。请创建：右键 → Create → NPC → NPC Database，放到 Resources/NPCData/");
-
-        // 加载 Prefab
         npcPrefab = Resources.Load<GameObject>(npcPrefabPath);
         if (npcPrefab == null)
             Debug.LogError($"[NPCManager] 找不到 Prefab: Resources/{npcPrefabPath}");
 
-        // 自动创建容器
         npcParent = new GameObject("NPCs").transform;
         npcParent.SetParent(transform);
     }
@@ -65,118 +47,33 @@ public class NPCManager : MonoBehaviour
     private void Start()
     {
         InitSpawnPointUsage();
-        LoadAllNPCs();
+        SpawnFromDistributor();
     }
 
     /// <summary>
-    /// 加载所有 NPC：先手动条目，再 API（如果启用）。可由外部调用刷新。
+    /// 从 NPCDistributor 获取本场景的 NPC 子集并生成
     /// </summary>
-    public void LoadAllNPCs()
+    private void SpawnFromDistributor()
     {
         if (npcPrefab == null) return;
 
-        // ===== 阶段 1：手动 NPC =====
-        if (database != null)
+        if (NPCDistributor.Instance == null)
         {
-            var manualList = database.GetManualNPCInfos();
-            int newManual = 0;
-            foreach (var info in manualList)
-            {
-                if (!spawnedNPCs.ContainsKey(info.Id) && SpawnNPC(info))
-                    newManual++;
-            }
-            manualCount = newManual;
-            if (newManual > 0)
-                Debug.Log($"[NPCManager] 手动 NPC 已加载: {newManual} 个");
-        }
-
-        // ===== 阶段 2：API NPC =====
-        if (database != null && database.enableApiFetch)
-        {
-            FetchApiNPCs();
-        }
-    }
-
-    /// <summary>
-    /// 仅触发 API 获取（手动条目不重新加载）
-    /// </summary>
-    public void FetchApiNPCs()
-    {
-        if (isLoading)
-        {
-            Debug.LogWarning("[NPCManager] 正在加载，忽略重复请求");
+            Debug.LogWarning("[NPCManager] NPCDistributor 不存在，无法获取 NPC 数据");
             return;
         }
-        if (npcPrefab == null) return;
 
-        string url = database != null ? database.apiUrl : "http://devshowcase.site/api/approved";
-        isLoading = true;
-        StartCoroutine(NPCApiService.FetchNPCs(url, OnFetchSuccess, OnFetchError));
-    }
+        string sceneName = SceneManager.GetActiveScene().name;
+        var npcList = NPCDistributor.Instance.GetNPCsForScene(sceneName);
 
-    private void OnFetchSuccess(List<NPCInfo> npcList)
-    {
-        isLoading = false;
-        Debug.Log($"[NPCManager] API 返回 {npcList.Count} 个 NPC");
-
-        int newCount = 0;
         foreach (var info in npcList)
         {
-            if (spawnedNPCs.ContainsKey(info.Id))
-            {
-                // 已存在：更新 Sprite（缓存→网络可能有新图）
-                var existing = spawnedNPCs[info.Id];
-                if (existing != null)
-                {
-                    var ctrl = existing.GetComponent<NPCController>();
-                    if (ctrl != null) ctrl.SetData(info);
-                }
-                continue;
-            }
-
-            if (SpawnNPC(info))
-                newCount++;
+            if (!spawnedNPCs.ContainsKey(info.Id))
+                SpawnNPC(info);
         }
 
-        apiCount = newCount;
-        if (newCount > 0)
-            Debug.Log($"[NPCManager] 新增 {newCount} 个 API NPC, 总计 {spawnedNPCs.Count} 个");
-
-        RemoveRevokedNPCs(npcList);
-    }
-
-    /// <summary>
-    /// 对比最新 API 列表，移除场景中已被撤销审核的 NPC（仅检查 API NPC，即 ID > 0）
-    /// </summary>
-    private void RemoveRevokedNPCs(List<NPCInfo> validList)
-    {
-        var validIds = new HashSet<int>();
-        foreach (var info in validList)
-            validIds.Add(info.Id);
-
-        var toRemove = new List<int>();
-        foreach (var kvp in spawnedNPCs)
-        {
-            if (kvp.Key > 0 && !validIds.Contains(kvp.Key))
-                toRemove.Add(kvp.Key);
-        }
-
-        foreach (int id in toRemove)
-        {
-            if (spawnedNPCs[id] != null)
-                Destroy(spawnedNPCs[id]);
-            spawnedNPCs.Remove(id);
-            NPCApiService.RemoveCachedImage(id);
-        }
-
-        if (toRemove.Count > 0)
-            Debug.Log($"[NPCManager] 已移除 {toRemove.Count} 个被撤销审核的 NPC");
-    }
-
-    private void OnFetchError(string error)
-    {
-        isLoading = false;
-        Debug.LogError($"[NPCManager] {error}");
+        spawnedCount = spawnedNPCs.Count;
+        Debug.Log($"[NPCManager] 场景 '{sceneName}' 生成了 {spawnedCount} 个 NPC");
     }
 
     private bool SpawnNPC(NPCInfo info)
@@ -186,13 +83,9 @@ public class NPCManager : MonoBehaviour
         GameObject go = Instantiate(npcPrefab, pos, Quaternion.identity, npcParent);
         var controller = go.GetComponent<NPCController>();
         if (controller != null)
-        {
             controller.SetData(info);
-        }
         else
-        {
             Debug.LogError("[NPCManager] Prefab 缺少 NPCController！");
-        }
 
         spawnedNPCs[info.Id] = go;
         return true;
@@ -237,13 +130,11 @@ public class NPCManager : MonoBehaviour
         }
         spawnedNPCs.Clear();
         InitSpawnPointUsage();
-        manualCount = 0;
-        apiCount = 0;
-        Debug.Log("[NPCManager] 所有 NPC 已清除");
+        spawnedCount = 0;
     }
 
     /// <summary>
-    /// 获取当前场景中普通 NPC 的总数
+    /// 当前场景中已生成的 NPC 数量
     /// </summary>
     public int TotalNPCs => spawnedNPCs.Count;
 }

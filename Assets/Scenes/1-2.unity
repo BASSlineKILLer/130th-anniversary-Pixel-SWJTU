@@ -9849,6 +9849,7 @@ GameObject:
   - component: {fileID: 404027826}
   - component: {fileID: 404027828}
   - component: {fileID: 404027827}
+  - component: {fileID: 404027829}
   m_Layer: 0
   m_Name: trees&rocks
   m_TagString: Untagged
@@ -20402,6 +20403,18 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
+--- !u!114 &404027829
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 404027825}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8da085f7c5ef7764c910c39f66111323, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &422575412
 GameObject:
   m_ObjectHideFlags: 0
@@ -21637,6 +21650,7 @@ GameObject:
   - component: {fileID: 800521528}
   - component: {fileID: 800521530}
   - component: {fileID: 800521529}
+  - component: {fileID: 800521531}
   m_Layer: 0
   m_Name: back-buildings
   m_TagString: Untagged
@@ -22534,6 +22548,18 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
+--- !u!114 &800521531
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 800521527}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8da085f7c5ef7764c910c39f66111323, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &816538769
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -140,6 +140,8 @@ namespace SWJTUGame.UI
             // 重置 GameManager 状态（清除上一局可能残留的暂停/锁定）
             if (GameManager.Instance != null)
                 GameManager.Instance.ResetForNewGame();
+            if (NPCDistributor.Instance != null)
+                NPCDistributor.Instance.Redistribute();
 
             SceneTransitionManager.Instance.LoadFromSave(data);
         }
@@ -205,6 +207,8 @@ namespace SWJTUGame.UI
                 GameManager.Instance.ResetForNewGame();
             if (MedalManager.Instance != null)
                 MedalManager.Instance.ResetForNewGame();
+            if (NPCDistributor.Instance != null)
+                NPCDistributor.Instance.Redistribute();
 
             if (SceneTransitionManager.Instance != null)
                 SceneTransitionManager.Instance.TransitionToScene(gameSceneName, newGameSpawnPointId);

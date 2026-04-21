@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 6619339390128712186}
   - component: {fileID: 8933479852357327753}
   - component: {fileID: 2940141535282517884}
+  - component: {fileID: 3779007675488689113}
   m_Layer: 0
   m_Name: PersistentManagers
   m_TagString: Untagged
@@ -27,7 +28,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1706034032046450923}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -36.70226, y: 57.6428, z: -0.2995964}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -73,3 +74,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isPaused: 0
   isDialogueLocked: 0
+--- !u!114 &3779007675488689113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1706034032046450923}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 630cd6a2230291e40917f1fd5a5be680, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  database: {fileID: 11400000, guid: b40b95f4217bc164f851b6a2d7a2bd6b, type: 2}
+  gameSceneNames:
+  - 1-1
+  - 1-2

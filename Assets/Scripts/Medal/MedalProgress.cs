@@ -53,11 +53,11 @@ public class MedalProgress : MonoBehaviour
 
     void UpdateProgress()
     {
-        if (config == null || progressSlider == null || MedalManager.Instance == null || NPCManager.Instance == null)
+        if (config == null || progressSlider == null || MedalManager.Instance == null)
             return;
 
-        // 获取总数（优先从 NPCManager，否则用配置）
-        int total = NPCManager.Instance.TotalNPCs;
+        // 获取全局 NPC 总数（优先从 NPCDistributor，回退到配置值）
+        int total = NPCDistributor.Instance != null ? NPCDistributor.Instance.TotalNPCs : 0;
         if (total == 0 && config.totalNPCs > 0)
             total = config.totalNPCs;
 
