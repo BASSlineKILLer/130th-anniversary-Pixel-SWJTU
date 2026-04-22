@@ -59,11 +59,20 @@ TagManager:
   - name: Rock
     uniqueID: 13338497
     locked: 0
+  - name: Stairs
+    uniqueID: 1375689899
+    locked: 0
+  - name: Platform
+    uniqueID: 1531060681
+    locked: 0
   - name: Player
     uniqueID: 2535261691
     locked: 0
   - name: Buildings
     uniqueID: 3783118435
+    locked: 0
+  - name: Overlay
+    uniqueID: 3991720129
     locked: 0
   - name: Flower&Tree
     uniqueID: 1914840825
