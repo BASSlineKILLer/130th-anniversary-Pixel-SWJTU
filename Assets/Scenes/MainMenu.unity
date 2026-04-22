@@ -3948,7 +3948,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gameSceneName: 1-1
-  newGameSpawnPointId: start
+  newGameSpawnPointId: 2
   continueButton: {fileID: 977991906}
   settingsPanel: {fileID: 1555227672}
   aboutPanel: {fileID: 80070411}

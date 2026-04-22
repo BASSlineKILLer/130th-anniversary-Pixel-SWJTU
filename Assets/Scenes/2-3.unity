@@ -21596,7 +21596,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ec349dba1398b742a07eca7dcbc4264, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawnPointId: "\uFF10"
+  spawnPointId: 0
 --- !u!114 &524403621
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -44624,7 +44624,6 @@ GameObject:
   m_Component:
   - component: {fileID: 827440576}
   - component: {fileID: 827440579}
-  - component: {fileID: 827440578}
   - component: {fileID: 827440577}
   m_Layer: 0
   m_Name: 2-3 ROOM exit
@@ -44661,23 +44660,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spawnPointId: 3
---- !u!114 &827440578
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 827440575}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c8dfc54f300c5dc4ca48a2d62952d673, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mode: 1
-  targetPosition: {fileID: 0}
-  targetSceneName: 
-  targetSpawnPointId: 
-  cooldown: 1
 --- !u!61 &827440579
 BoxCollider2D:
   m_ObjectHideFlags: 0
