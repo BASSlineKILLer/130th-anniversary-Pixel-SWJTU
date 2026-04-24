@@ -22,4 +22,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 10128bd363ecefe46a1db46f5bb200d0, type: 2}
   - {fileID: 11400000, guid: caea947e507cf004ebede510904abca1, type: 2}
   enableApiFetch: 1
-  apiUrl: http://devshowcase.site/api/approved
+  apiUrl: https://devshowcase.site/api/approved
+  clearCacheOnStart: 0

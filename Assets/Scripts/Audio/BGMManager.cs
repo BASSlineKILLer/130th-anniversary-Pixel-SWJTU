@@ -42,6 +42,7 @@ public class BGMManager : MonoBehaviour
     private int currentBGMIndex = -1;
     private float currentVolume;
     private bool vcaValid;
+    private bool playbackStarted; // 是否已经开始过播放（WebGL 下需要等用户手势）
 
     private void Awake()
     {
@@ -55,10 +56,50 @@ public class BGMManager : MonoBehaviour
 
         LoadPrefs();
         InitVCA();
-        
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+        // WebGL: 浏览器 autoplay policy 要求必须有用户手势后才能启动 AudioContext。
+        // 此处不直接播放，改为 Update 中监听首次输入。
+#else
+        if (currentBGMIndex >= 0 && currentBGMIndex < bgmTracks.Length)
+        {
+            PlayBGM(currentBGMIndex);
+            playbackStarted = true;
+        }
+#endif
+    }
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    private void Update()
+    {
+        if (playbackStarted) return;
+        if (!HasUserGesture()) return;
+
         if (currentBGMIndex >= 0 && currentBGMIndex < bgmTracks.Length)
             PlayBGM(currentBGMIndex);
+        playbackStarted = true;
     }
+
+    /// <summary>
+    /// 检测是否存在用户手势（鼠标/键盘/触摸）。
+    /// 用 try/catch 兜底：若项目关闭了老 Input Manager 也不会崩，
+    /// 这种情况下 BGM 会在首个 Button 点击后由 SelectBGM/UI 触发间接启动。
+    /// </summary>
+    private bool HasUserGesture()
+    {
+        try
+        {
+            if (Input.anyKeyDown) return true;
+            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)) return true;
+            if (Input.touchCount > 0) return true;
+        }
+        catch (System.Exception)
+        {
+            // 老 Input Manager 被禁用，依赖 UI 点击 → SelectBGM 兜底启动。
+        }
+        return false;
+    }
+#endif
 
     private void OnDestroy()
     {
@@ -87,10 +128,11 @@ public class BGMManager : MonoBehaviour
     public void SelectBGM(int index)
     {
         if (index < 0 || index >= bgmTracks.Length) return;
-        if (index == currentBGMIndex) return;
+        if (index == currentBGMIndex && playbackStarted) return;
 
         currentBGMIndex = index;
         PlayBGM(index);
+        playbackStarted = true;
         SavePrefs();
     }
 

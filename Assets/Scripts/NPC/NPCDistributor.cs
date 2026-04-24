@@ -1,12 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 /// <summary>
 /// NPC 跨场景分配器（单例 + DontDestroyOnLoad）。
 /// 在 MainMenu 初始化，一次性加载全部 NPC 数据（手动 + API），
-/// 洗牌后按场景名均匀分配。各场景的 NPCManager 通过 GetNPCsForScene 获取自己的子集。
+/// 洗牌后按场景名均匀分配。各场景的 NPCManager 通过 GetNPCsForScene 获取自己的子集，
+/// 再根据场景内配置的点位容量自行装桶。
 /// </summary>
 public class NPCDistributor : MonoBehaviour
 {
@@ -17,7 +17,7 @@ public class NPCDistributor : MonoBehaviour
     public NPCDatabase database;
 
     [Header("场景配置")]
-    [Tooltip("需要分配 NPC 的游戏场景名称（可随时增删）")]
+    [Tooltip("需要分配 NPC 的游戏场景名称（可随时增删）。点位容量在各场景的 NPCManager 中配置")]
     public List<string> gameSceneNames = new List<string>();
 
     /// <summary>所有 NPC 的总数（手动 + API）</summary>
@@ -26,8 +26,10 @@ public class NPCDistributor : MonoBehaviour
     /// <summary>数据是否已就绪（手动条目加载 + API 至少返回一次）</summary>
     public bool IsReady { get; private set; }
 
-    private List<NPCInfo> allNPCs = new List<NPCInfo>();
-    private Dictionary<string, List<NPCInfo>> sceneAssignment = new Dictionary<string, List<NPCInfo>>();
+    private readonly List<NPCInfo> allNPCs = new List<NPCInfo>();
+    private readonly Dictionary<string, List<NPCInfo>> sceneAssignment
+        = new Dictionary<string, List<NPCInfo>>();
+
     private bool distributed;
 
     private void Awake()
@@ -59,6 +61,12 @@ public class NPCDistributor : MonoBehaviour
         sceneAssignment.Clear();
         distributed = false;
         IsReady = false;
+
+        if (database != null && database.clearCacheOnStart)
+        {
+            NPCApiService.ClearCache();
+            Debug.Log("[NPCDistributor] 已按 clearCacheOnStart 标记清除本地 NPC 缓存");
+        }
 
         if (database != null)
         {
@@ -101,13 +109,9 @@ public class NPCDistributor : MonoBehaviour
     private void EnsureDistributed()
     {
         if (!distributed)
-        {
             Distribute();
-        }
         else
-        {
             AppendUnassignedNPCs();
-        }
         IsReady = true;
     }
 
@@ -124,7 +128,8 @@ public class NPCDistributor : MonoBehaviour
         {
             if (assignedIds.Contains(npc.Id)) continue;
             string targetScene = FindLeastLoadedScene();
-            sceneAssignment[targetScene].Add(npc);
+            if (targetScene != null)
+                sceneAssignment[targetScene].Add(npc);
         }
     }
 
@@ -168,11 +173,19 @@ public class NPCDistributor : MonoBehaviour
     }
 
     /// <summary>
-    /// 重新加载并分配（新游戏 / 继续游戏时调用）。同一局游戏内不应再次调用。
+    /// 重新洗牌并分配（复用已加载的 NPC 池，不重新拉取 API）。
+    /// 新游戏 / 继续游戏时调用，用于让本局拿到不同的随机分布。
+    /// 若首次加载尚未完成，本调用被忽略，沉用进行中的加载结果。
     /// </summary>
     public void Redistribute()
     {
-        LoadAndDistribute();
+        if (!IsReady)
+        {
+            Debug.Log("[NPCDistributor] Redistribute 跳过：首次加载尚未就绪，沉用已有流程");
+            return;
+        }
+        distributed = false;
+        Distribute();
     }
 
     private void Distribute()
@@ -189,17 +202,7 @@ public class NPCDistributor : MonoBehaviour
         foreach (var sceneName in gameSceneNames)
             sceneAssignment[sceneName] = new List<NPCInfo>();
 
-        // Fisher-Yates 洗牌
-        var shuffled = new List<NPCInfo>(allNPCs);
-        for (int i = shuffled.Count - 1; i > 0; i--)
-        {
-            int j = Random.Range(0, i + 1);
-            var temp = shuffled[i];
-            shuffled[i] = shuffled[j];
-            shuffled[j] = temp;
-        }
-
-        // 轮询分配
+        var shuffled = ShuffleCopy(allNPCs);
         for (int i = 0; i < shuffled.Count; i++)
         {
             string sceneName = gameSceneNames[i % gameSceneNames.Count];
@@ -207,13 +210,29 @@ public class NPCDistributor : MonoBehaviour
         }
 
         distributed = true;
+        LogDistribution();
+    }
+
+    private static List<NPCInfo> ShuffleCopy(List<NPCInfo> source)
+    {
+        var shuffled = new List<NPCInfo>(source);
+        for (int i = shuffled.Count - 1; i > 0; i--)
+        {
+            int j = Random.Range(0, i + 1);
+            (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
+        }
+        return shuffled;
+    }
+
+    private void LogDistribution()
+    {
         Debug.Log($"[NPCDistributor] 已分配 {allNPCs.Count} 个 NPC 到 {gameSceneNames.Count} 个场景");
         foreach (var kvp in sceneAssignment)
             Debug.Log($"  {kvp.Key}: {kvp.Value.Count} 个 NPC");
     }
 
     /// <summary>
-    /// 获取指定场景的 NPC 子集。NPCManager 在 Start 中调用。
+    /// 获取指定场景的 NPC 子集。NPCManager 在 Start 中调用，随后按点位容量自行装桶。
     /// </summary>
     public List<NPCInfo> GetNPCsForScene(string sceneName)
     {
@@ -232,13 +251,9 @@ public class NPCDistributor : MonoBehaviour
         if (string.IsNullOrEmpty(username)) return null;
 
         foreach (var kvp in sceneAssignment)
-        {
             foreach (var npc in kvp.Value)
-            {
-                if (npc.Username == username)
-                    return kvp.Key;
-            }
-        }
+                if (npc.Username == username) return kvp.Key;
+
         return null;
     }
 

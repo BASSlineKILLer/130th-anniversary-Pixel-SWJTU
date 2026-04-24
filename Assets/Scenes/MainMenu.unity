@@ -961,6 +961,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: PersistentManagers
       objectReference: {fileID: 0}
+    - target: {fileID: 3779007675488689113, guid: 18f2d4f3a68022443834bb283f1b580a, type: 3}
+      propertyPath: sceneQuotas.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3779007675488689113, guid: 18f2d4f3a68022443834bb283f1b580a, type: 3}
+      propertyPath: sceneQuotas.Array.data[0].spawnCapacities.Array.size
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -9,9 +9,13 @@ using System.IO;
 [CustomEditor(typeof(NPCDatabase))]
 public class NPCDatabaseEditor : Editor
 {
+    private const long KB = 1024L;
+    private const long MB = KB * 1024L;
+
     private SerializedProperty manualEntries;
     private SerializedProperty enableApiFetch;
     private SerializedProperty apiUrl;
+    private SerializedProperty clearCacheOnStart;
 
     private Vector2 scrollPos;
 
@@ -20,6 +24,7 @@ public class NPCDatabaseEditor : Editor
         manualEntries = serializedObject.FindProperty("manualEntries");
         enableApiFetch = serializedObject.FindProperty("enableApiFetch");
         apiUrl = serializedObject.FindProperty("apiUrl");
+        clearCacheOnStart = serializedObject.FindProperty("clearCacheOnStart");
     }
 
     public override void OnInspectorGUI()
@@ -92,7 +97,46 @@ public class NPCDatabaseEditor : Editor
             EditorGUI.indentLevel--;
         }
 
+        // ===== 缓存调试 =====
+        EditorGUILayout.Space(16);
+        DrawSeparator();
+        EditorGUILayout.Space(4);
+        EditorGUILayout.LabelField("── 缓存调试 ──", EditorStyles.boldLabel);
+        EditorGUILayout.Space(4);
+
+        DrawCacheDebugSection();
+
         serializedObject.ApplyModifiedProperties();
+    }
+
+    /// <summary>
+    /// 缓存调试区域：启动时清缓存勾选 + 当前大小 + 立即清除按钮
+    /// </summary>
+    private void DrawCacheDebugSection()
+    {
+        EditorGUILayout.PropertyField(clearCacheOnStart,
+            new GUIContent("启动时清除缓存", "勾选后下次 Play 会强制从网络重新拉取。测试完记得取消勾选"));
+
+        EditorGUILayout.BeginHorizontal();
+        EditorGUILayout.LabelField($"当前缓存大小：{FormatCacheSize(NPCApiService.GetCacheSize())}");
+
+        if (GUILayout.Button("立即清除", GUILayout.Width(80)))
+        {
+            if (EditorUtility.DisplayDialog("确认清除缓存",
+                "删除 NPCCache 下的所有 JSON 和图片缓存？", "清除", "取消"))
+            {
+                NPCApiService.ClearCache();
+                Repaint();
+            }
+        }
+        EditorGUILayout.EndHorizontal();
+    }
+
+    private static string FormatCacheSize(long bytes)
+    {
+        if (bytes < KB) return $"{bytes} B";
+        if (bytes < MB) return $"{bytes / (float)KB:F1} KB";
+        return $"{bytes / (float)MB:F2} MB";
     }
 
     /// <summary>
