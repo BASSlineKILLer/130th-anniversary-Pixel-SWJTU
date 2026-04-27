@@ -168,17 +168,13 @@ public class BGMManager : MonoBehaviour
 
     private void InitVCA()
     {
-        if (string.IsNullOrEmpty(vcaPath))
-        {
-            Debug.LogWarning("[BGMManager] VCA 路径为空，音量控制不可用");
-            return;
-        }
+        if (string.IsNullOrEmpty(vcaPath) || vcaValid) return;
 
         try
         {
             musicVCA = RuntimeManager.GetVCA(vcaPath);
             vcaValid = musicVCA.isValid();
-            
+
             if (vcaValid)
             {
                 Debug.Log($"[BGMManager] VCA 初始化成功: {vcaPath}");
@@ -186,12 +182,12 @@ public class BGMManager : MonoBehaviour
             }
             else
             {
-                Debug.LogError($"[BGMManager] VCA 无效: {vcaPath}");
+                Debug.LogWarning($"[BGMManager] VCA 暂未就绪: {vcaPath}（bank 可能还在加载）");
             }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[BGMManager] 无法获取 VCA: {vcaPath}\n错误: {e.Message}");
+            Debug.LogWarning($"[BGMManager] 获取 VCA 失败（可能 bank 未就绪）: {e.Message}");
             vcaValid = false;
         }
     }
@@ -218,6 +214,9 @@ public class BGMManager : MonoBehaviour
 
         currentBGMInstance.start();
         Debug.Log($"[BGMManager] 开始播放 BGM: {bgmTracks[index].displayName}");
+
+        // Event 创建成功说明 bank 已加载完毕，此时可以安全初始化 VCA
+        if (!vcaValid) InitVCA();
     }
 
     private void StopCurrentBGM()

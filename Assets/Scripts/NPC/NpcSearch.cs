@@ -5,8 +5,8 @@ using TMPro;
 
 /// <summary>
 /// 搜索功能锁的对接 API。
-/// 任务系统 / 剧情系统完成特定条件后，调用 <see cref="UnlockByQuest"/> 即可解锁搜索功能。
-/// 解锁条件为 OR 关系：勋章数达标 或 任务已解锁 任一满足即解锁。
+/// 任务系统 / 剧情系统完成特定条件后，调用 <see cref="UnlockByQuest"/> 解除剧情这一道锁。
+/// 注意：解锁是 AND 关系——勋章数达标 且 任务已解锁，二者皆满足才能使用搜索。
 /// </summary>
 public static class SearchLockState
 {
@@ -52,6 +52,10 @@ public class NpcSearch : MonoBehaviour
 
     [Tooltip("关键剧情未触发时显示的提示")]
     [TextArea] public string storyLockedHint = "完成关键剧情后才能解锁搜索功能";
+
+    [Header("调试")]
+    [Tooltip("调试用：勾上后跳过所有功能锁检查（勋章 + 剧情），方便测试。打包前请取消勾选。")]
+    [SerializeField] private bool debugBypassLock = false;
 
     private bool isInRange = false;
     private bool isSearching = false;
@@ -146,6 +150,8 @@ public class NpcSearch : MonoBehaviour
     /// </summary>
     private string GetLockedReason()
     {
+        if (debugBypassLock) return null;
+
         if (!IsMedalUnlocked())
             return string.Format(medalLockedHint, requiredMedalCount);
 

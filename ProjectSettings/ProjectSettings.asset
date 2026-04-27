@@ -43,7 +43,7 @@ PlayerSettings:
   - logo: {fileID: 21300000, guid: 937d1619f3c95fa49a882835aacbe183, type: 3}
     duration: 4.88
   - logo: {fileID: 10404, guid: 0000000000000000f000000000000000, type: 0}
-    duration: 4.38
+    duration: 2
   m_VirtualRealitySplashScreen: {fileID: 2800000, guid: ce0ff29680c4a784f864a963d9a2a592, type: 3}
   m_HolographicTrackingLossScreen: {fileID: 0}
   defaultScreenWidth: 1920
@@ -620,7 +620,8 @@ PlayerSettings:
   platformArchitecture: {}
   scriptingBackend: {}
   il2cppCompilerConfiguration: {}
-  il2cppCodeGeneration: {}
+  il2cppCodeGeneration:
+    WebGL: 1
   managedStrippingLevel:
     EmbeddedLinux: 1
     GameCoreScarlett: 1
@@ -631,14 +632,14 @@ PlayerSettings:
     QNX: 1
     Stadia: 1
     VisionOS: 1
-    WebGL: 1
+    WebGL: 4
     Windows Store Apps: 1
     XboxOne: 1
     iPhone: 1
     tvOS: 1
   incrementalIl2cppBuild: {}
   suppressCommonWarnings: 1
-  allowUnsafeCode: 0
+  allowUnsafeCode: 1
   useDeterministicCompilation: 1
   additionalIl2CppArgs: 
   scriptingRuntimeVersion: 1

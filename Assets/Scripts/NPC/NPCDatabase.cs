@@ -23,7 +23,7 @@ public class NPCDatabase : ScriptableObject
     public bool enableApiFetch = true;
 
     [Tooltip("后端 API 地址")]
-    public string apiUrl = "http://devshowcase.site/api/approved";
+    public string apiUrl = "https://devshowcase.site/api/approved";
 
     [Tooltip("调试用：勾选后，下次 Play 启动时会先删除本地 NPCCache（JSON + 图片），强制从网络重新拉取。测试完记得取消勾选")]
     public bool clearCacheOnStart = false;

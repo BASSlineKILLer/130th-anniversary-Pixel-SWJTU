@@ -85,7 +85,7 @@ public class NPCDistributor : MonoBehaviour
 
     private IEnumerator FetchAndMerge()
     {
-        string url = database != null ? database.apiUrl : "http://devshowcase.site/api/approved";
+        string url = database != null ? database.apiUrl : "https://devshowcase.site/api/approved";
 
         yield return NPCApiService.FetchNPCs(
             url,

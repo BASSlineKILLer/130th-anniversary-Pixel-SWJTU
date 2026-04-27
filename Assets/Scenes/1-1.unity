@@ -16601,6 +16601,7 @@ MonoBehaviour:
   requiredMedalCount: 5
   medalLockedHint: "\u9700\u8981\u6536\u96C6 {0} \u679A\u52CB\u7AE0\u624D\u80FD\u89E3\u9501\u641C\u7D22\u529F\u80FD"
   storyLockedHint: "\u5B8C\u6210\u5173\u952E\u5267\u60C5\u540E\u624D\u80FD\u89E3\u9501\u641C\u7D22\u529F\u80FD"
+  debugBypassLock: 1
 --- !u!61 &901333081
 BoxCollider2D:
   m_ObjectHideFlags: 0

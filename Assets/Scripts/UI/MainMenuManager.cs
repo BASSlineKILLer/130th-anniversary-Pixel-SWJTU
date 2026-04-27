@@ -186,6 +186,10 @@ namespace SWJTUGame.UI
             Debug.Log("[MainMenuManager] 退出游戏");
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
+#elif UNITY_WEBGL
+            // WebGL 下 Application.Quit() 无效且会导致页面卡死。
+            // 尝试让浏览器关闭当前标签页；若被拦截则刷新页面回到初始状态。
+            Application.ExternalEval("window.close(); if(!window.closed){ location.reload(); }");
 #else
             Application.Quit();
 #endif
