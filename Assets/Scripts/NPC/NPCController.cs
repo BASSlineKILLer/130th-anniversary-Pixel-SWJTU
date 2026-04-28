@@ -17,8 +17,13 @@ using UnityEngine;
 /// </summary>
 [RequireComponent(typeof(SpriteRenderer))]
 [RequireComponent(typeof(BoxCollider2D))]
+[RequireComponent(typeof(Rigidbody2D))]
 public class NPCController : MonoBehaviour
 {
+    // 脚底实体碰撞体的默认尺寸：半径小、贴脚底，避免上半身阻挡视觉
+    private const float DEFAULT_SOLID_RADIUS = 0.15f;
+    private const float DEFAULT_SOLID_FOOT_OFFSET_Y = 0.1f;
+
     [Header("提示气泡")]
     [Tooltip("气泡子物体")]
     public GameObject bubbleRoot;
@@ -29,10 +34,19 @@ public class NPCController : MonoBehaviour
     [Tooltip("触发区域比 Sprite 实际大小多出的额外范围")]
     public float triggerPadding = 1.5f;
 
+    [Header("实体碰撞（脚底）")]
+    [Tooltip("脚底实体碰撞圈半径，用于阻挡墙体和玩家")]
+    public float solidColliderRadius = DEFAULT_SOLID_RADIUS;
+    [Tooltip("脚底实体碰撞圈相对 pivot（脚底）的 Y 偏移")]
+    public float solidColliderFootOffsetY = DEFAULT_SOLID_FOOT_OFFSET_Y;
+
     /// <summary>
     /// NPC 数据，供对话系统读取
     /// </summary>
     public NPCInfo Info { get; private set; }
+
+    /// <summary>脚底实体碰撞体，NPCWalk 用 Rigidbody2D.Cast 走这个</summary>
+    public CircleCollider2D SolidCollider { get; private set; }
 
     private SpriteRenderer spriteRenderer;
 
@@ -40,8 +54,9 @@ public class NPCController : MonoBehaviour
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
 
-        var col = GetComponent<BoxCollider2D>();
-        col.isTrigger = true;
+        SetupTriggerCollider();
+        SetupKinematicRigidbody();
+        SolidCollider = SetupSolidCollider();
 
         if (bubbleRoot != null)
             bubbleRoot.SetActive(false);
@@ -53,6 +68,44 @@ public class NPCController : MonoBehaviour
         // 自动挂载遮挡轮廓
         if (GetComponent<OcclusionSilhouette>() == null)
             gameObject.AddComponent<OcclusionSilhouette>();
+    }
+
+    /// <summary>玩家交互检测用的 trigger collider（覆盖整个 Sprite）</summary>
+    private void SetupTriggerCollider()
+    {
+        var col = GetComponent<BoxCollider2D>();
+        col.isTrigger = true;
+    }
+
+    /// <summary>
+    /// Kinematic Rigidbody2D：让 NPC 参与物理但不被外力推动。
+    /// Player 的 Dynamic Rigidbody 撞上来不会撞飞 NPC。
+    /// </summary>
+    private void SetupKinematicRigidbody()
+    {
+        var rb = GetComponent<Rigidbody2D>();
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.gravityScale = 0f;
+        rb.freezeRotation = true;
+        rb.useFullKinematicContacts = true;
+    }
+
+    /// <summary>
+    /// 脚底实体 CircleCollider2D：阻挡墙体和玩家。
+    /// 复用已有的实体（非 trigger）CircleCollider2D；没有就新建一个并配置默认尺寸。
+    /// </summary>
+    private CircleCollider2D SetupSolidCollider()
+    {
+        foreach (var existing in GetComponents<CircleCollider2D>())
+        {
+            if (!existing.isTrigger) return existing;
+        }
+
+        var solid = gameObject.AddComponent<CircleCollider2D>();
+        solid.isTrigger = false;
+        solid.radius = solidColliderRadius;
+        solid.offset = new Vector2(0f, solidColliderFootOffsetY);
+        return solid;
     }
 
     /// <summary>

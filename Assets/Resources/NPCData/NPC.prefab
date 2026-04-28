@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 3026511711978091820}
   - component: {fileID: 6527904548908342545}
   - component: {fileID: 9033263566756522440}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Bubble
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -113,7 +113,7 @@ GameObject:
   - component: {fileID: 6649154268262030676}
   - component: {fileID: 5042144171570417380}
   - component: {fileID: 3799047705362426748}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Background
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -191,7 +191,7 @@ GameObject:
   - component: {fileID: 5419108654029588288}
   - component: {fileID: 6096089716241714567}
   - component: {fileID: 5899701934768504367}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: NPC
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -326,6 +326,8 @@ MonoBehaviour:
   bubbleRoot: {fileID: 5783351178880776257}
   bubbleOffset: {x: 0, y: 0.3, z: 0}
   triggerPadding: 1.5
+  solidColliderRadius: 0.15
+  solidColliderFootOffsetY: 0.1
 --- !u!114 &6096089716241714567
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -338,12 +340,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b30d9604f3a4781479294832ea49f3f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveProbability: 0.957
+  moveProbability: 1
   moveSpeed: 2
   idleTimeRange: {x: 2, y: 5}
   roamRadius: 5
   bobAmplitude: 0.1
   bobFrequency: 8
+  obstacleLayers:
+    serializedVersion: 2
+    m_Bits: 55
+  obstacleSkin: 0.02
   footstepEvent:
     Guid:
       Data1: 0

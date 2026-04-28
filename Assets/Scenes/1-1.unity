@@ -14453,6 +14453,8 @@ MonoBehaviour:
   bubbleRoot: {fileID: 0}
   bubbleOffset: {x: 0, y: 0.3, z: 0}
   triggerPadding: 1.5
+  solidColliderRadius: 0.15
+  solidColliderFootOffsetY: 0.1
   specialData: {fileID: 11400000, guid: 02d20fc08f1f5b94f869864a11e62c86, type: 2}
   npcPrefab: {fileID: 8558224348558117790, guid: d3ab59d16a2aeca4da12dcd474b23997, type: 3}
 --- !u!61 &422575415
@@ -16753,7 +16755,7 @@ GameObject:
   - component: {fileID: 1139194135}
   - component: {fileID: 1139194137}
   - component: {fileID: 1139194136}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: grass
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -33283,7 +33285,7 @@ GameObject:
   - component: {fileID: 1417254278}
   - component: {fileID: 1417254280}
   - component: {fileID: 1417254279}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: road
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -54104,7 +54106,7 @@ Transform:
   m_GameObject: {fileID: 2070979200}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -81.5, y: 75.6, z: 0}
+  m_LocalPosition: {x: -81.5, y: 75.82, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -54432,7 +54434,7 @@ PrefabInstance:
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPoints.Array.data[1]
       value: 
-      objectReference: {fileID: 851598782}
+      objectReference: {fileID: 2070979201}
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPoints.Array.data[2]
       value: 

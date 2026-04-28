@@ -19319,6 +19319,8 @@ MonoBehaviour:
   bubbleRoot: {fileID: 0}
   bubbleOffset: {x: 0, y: 0.3, z: 0}
   triggerPadding: 1.5
+  solidColliderRadius: 0.15
+  solidColliderFootOffsetY: 0.1
   specialData: {fileID: 11400000, guid: 02d20fc08f1f5b94f869864a11e62c86, type: 2}
   npcPrefab: {fileID: 8558224348558117790, guid: d3ab59d16a2aeca4da12dcd474b23997, type: 3}
 --- !u!61 &422575415
@@ -21721,7 +21723,9 @@ Transform:
   m_LocalPosition: {x: 79.74933, y: -78.945496, z: 0.10236633}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1395705022}
+  - {fileID: 2021670521}
   m_Father: {fileID: 287841504}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &556625300
@@ -45170,6 +45174,7 @@ MonoBehaviour:
   requiredMedalCount: 5
   medalLockedHint: "\u9700\u8981\u6536\u96C6 {0} \u679A\u52CB\u7AE0\u624D\u80FD\u89E3\u9501\u641C\u7D22\u529F\u80FD"
   storyLockedHint: "\u5B8C\u6210\u5173\u952E\u5267\u60C5\u540E\u624D\u80FD\u89E3\u9501\u641C\u7D22\u529F\u80FD"
+  debugBypassLock: 0
 --- !u!61 &901333081
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -48321,7 +48326,7 @@ GameObject:
   - component: {fileID: 1139194135}
   - component: {fileID: 1139194137}
   - component: {fileID: 1139194136}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: grass
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -62484,6 +62489,37 @@ Sprite:
   m_PhysicsShape: []
   m_Bones: []
   m_SpriteID: 
+--- !u!1 &1395705021
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1395705022}
+  m_Layer: 0
+  m_Name: pops
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1395705022
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1395705021}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 28.06, y: 87.14, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 550403285}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!213 &1399517047
 Sprite:
   m_ObjectHideFlags: 0
@@ -62915,7 +62951,7 @@ GameObject:
   - component: {fileID: 1417254278}
   - component: {fileID: 1417254280}
   - component: {fileID: 1417254279}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: road
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -99897,6 +99933,37 @@ Sprite:
   m_PhysicsShape: []
   m_Bones: []
   m_SpriteID: 
+--- !u!1 &2021670520
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2021670521}
+  m_Layer: 0
+  m_Name: pops (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2021670521
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2021670520}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 52.18, y: 85.92, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 550403285}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!213 &2027296066
 Sprite:
   m_ObjectHideFlags: 0
@@ -101863,16 +101930,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPoints.Array.size
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPoints.Array.data[0]
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 1395705022}
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPoints.Array.data[1]
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 2021670521}
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPoints.Array.data[2]
       value: 
@@ -101912,6 +101979,18 @@ PrefabInstance:
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPoints.Array.data[11]
       value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
+      propertyPath: spawnPointCapacities.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
+      propertyPath: spawnPointCapacities.Array.data[0]
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
+      propertyPath: spawnPointCapacities.Array.data[1]
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 2907527555909981313, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
