@@ -12,7 +12,8 @@ public class CinemachineAutoSetup : MonoBehaviour
     [SerializeField] private Transform followTarget;
 
     [Header("相机参数")]
-    [SerializeField] private float damping = 1.5f;
+    // 像素艺术下 damping 不能太大，否则停下后摄像机会做亚像素位移导致瓦片边缘抖动
+    [SerializeField] private float damping = 0.2f;
     [SerializeField] private float orthographicSize = 5f;
     [SerializeField] private float cameraDistance = 10f;
     [SerializeField] private float deadZoneWidth = 0.05f;
@@ -20,7 +21,11 @@ public class CinemachineAutoSetup : MonoBehaviour
 
     [Header("边界限制（需要一个带 PolygonCollider2D 的 GameObject）")]
     [SerializeField] private Collider2D boundsCollider;
-    [SerializeField] private float confinerDamping = 0.3f;
+    [SerializeField] private float confinerDamping = 0f;
+
+    [Header("像素艺术")]
+    [Tooltip("启用 Cinemachine PixelPerfect 扩展，将 vcam 位置量化到主 Camera 的像素栅格。需主 Camera 上已挂 PixelPerfectCamera。")]
+    [SerializeField] private bool enablePixelPerfect = true;
 
     private void Awake()
     {
@@ -28,6 +33,7 @@ public class CinemachineAutoSetup : MonoBehaviour
         var vcam = CreateVirtualCamera();
         ConfigureBody(vcam);
         ConfigureConfiner(vcam);
+        ConfigurePixelPerfect(vcam);
     }
 
     private void EnsureBrain()
@@ -67,5 +73,15 @@ public class CinemachineAutoSetup : MonoBehaviour
         confiner.m_BoundingShape2D = boundsCollider;
         confiner.m_Damping = confinerDamping;
         confiner.m_ConfineScreenEdges = true;
+    }
+
+    /// <summary>
+    /// 加 CinemachinePixelPerfect 扩展。它会在 vcam 输出后把位置 snap 到主 Camera 的像素栅格，
+    /// 消除"停下后亚像素漂移"导致的瓦片抖动。需主 Camera 上已挂 Pixel Perfect Camera。
+    /// </summary>
+    private void ConfigurePixelPerfect(CinemachineVirtualCamera vcam)
+    {
+        if (!enablePixelPerfect) return;
+        vcam.gameObject.AddComponent<Cinemachine.CinemachinePixelPerfect>();
     }
 }
