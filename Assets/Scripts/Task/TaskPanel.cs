@@ -47,104 +47,94 @@ public class TaskPanel : MonoBehaviour
         DisplayCurrentPage();
     }
 
+    // 卡片上的子物体名后缀，按"上/下"两槽位区分
+    private const string SLOT_UP = "Up";
+    private const string SLOT_DOWN = "Down";
+
+    // 卡片边框颜色：彩蛋金色 / 普通白色 / 未解锁灰色
+    private static readonly Color FRAME_EASTER_EGG = new Color(1f, 0.84f, 0f, 1f); // #FFD700
+    private static readonly Color FRAME_NORMAL = Color.white;
+    private static readonly Color FRAME_LOCKED = new Color(0.4f, 0.4f, 0.4f, 1f);
+
     private void DisplayCurrentPage()
     {
-        // Get talked special NPCs
-        var talkedSpecialNPCs = MedalManager.Instance != null ? MedalManager.Instance.GetTalkedSpecialNPCs() : new List<string>();
+        var talkedSpecialNPCs = MedalManager.Instance != null
+            ? MedalManager.Instance.GetTalkedSpecialNPCs()
+            : new List<string>();
 
         int startIndex = currentPage * NPCsPerPage;
         int endIndex = Mathf.Min(startIndex + NPCsPerPage, allEntries.Count);
 
-        // Set up position
-        if (endIndex > startIndex)
-        {
-            var entry = allEntries[startIndex];
-            if (entry.specialNPCEntry != null)
-            {
-                // Set name up
-                var nameTextUp = cardContainer.Find("NameTextUp")?.GetComponent<TextMeshProUGUI>();
-                if (nameTextUp != null)
-                {
-                    nameTextUp.text = entry.specialNPCEntry.npcName;
-                }
-
-                // Set image up
-                var portraitImageUp = cardContainer.Find("PortraitImageUp")?.GetComponent<Image>();
-                if (portraitImageUp != null)
-                {
-                    bool isUnlocked = talkedSpecialNPCs.Contains(entry.specialNPCEntry.npcName);
-                    Sprite portrait = isUnlocked ? entry.specialNPCEntry.GetPortrait() : entry.specialNPCEntry.worldSprite;
-                    portraitImageUp.sprite = portrait;
-                    portraitImageUp.color = isUnlocked ? Color.white : Color.gray;
-                }
-
-                // Set story text up
-                var storyTextUp = cardContainer.Find("StoryTextUp")?.GetComponent<TextMeshProUGUI>();
-                if (storyTextUp != null)
-                {
-                    bool isUnlocked = talkedSpecialNPCs.Contains(entry.specialNPCEntry.npcName);
-                    storyTextUp.text = isUnlocked ? entry.storyText : "???";
-                }
-
-                // Set index text up
-                var indexTextUp = cardContainer.Find("IndexTextUp")?.GetComponent<TextMeshProUGUI>();
-                if (indexTextUp != null)
-                {
-                    indexTextUp.text = $"第{startIndex + 1}个特殊NPC";
-                }
-            }
-        }
-
-        // Set down position
-        if (endIndex > startIndex + 1)
-        {
-            var entry = allEntries[startIndex + 1];
-            if (entry.specialNPCEntry != null)
-            {
-                // Set name down
-                var nameTextDown = cardContainer.Find("NameTextDown")?.GetComponent<TextMeshProUGUI>();
-                if (nameTextDown != null)
-                {
-                    nameTextDown.text = entry.specialNPCEntry.npcName;
-                }
-
-                // Set image down
-                var portraitImageDown = cardContainer.Find("PortraitImageDown")?.GetComponent<Image>();
-                if (portraitImageDown != null)
-                {
-                    bool isUnlocked = talkedSpecialNPCs.Contains(entry.specialNPCEntry.npcName);
-                    Sprite portrait = isUnlocked ? entry.specialNPCEntry.GetPortrait() : entry.specialNPCEntry.worldSprite;
-                    portraitImageDown.sprite = portrait;
-                    portraitImageDown.color = isUnlocked ? Color.white : Color.gray;
-                }
-
-                // Set story text down
-                var storyTextDown = cardContainer.Find("StoryTextDown")?.GetComponent<TextMeshProUGUI>();
-                if (storyTextDown != null)
-                {
-                    bool isUnlocked = talkedSpecialNPCs.Contains(entry.specialNPCEntry.npcName);
-                    storyTextDown.text = isUnlocked ? entry.storyText : "???";
-                }
-
-                // Set index text down
-                var indexTextDown = cardContainer.Find("IndexTextDown")?.GetComponent<TextMeshProUGUI>();
-                if (indexTextDown != null)
-                {
-                    indexTextDown.text = $"第{startIndex + 2}个特殊NPC";
-                }
-            }
-        }
-
-        // Hide down if only one
+        bool hasUp = endIndex > startIndex;
         bool hasDown = endIndex > startIndex + 1;
-        var downImage = cardContainer.Find("PortraitImageDown")?.gameObject;
-        if (downImage != null) downImage.SetActive(hasDown);
-        var downName = cardContainer.Find("NameTextDown")?.gameObject;
-        if (downName != null) downName.SetActive(hasDown);
-        var downText = cardContainer.Find("StoryTextDown")?.gameObject;
-        if (downText != null) downText.SetActive(hasDown);
-        var downIndex = cardContainer.Find("IndexTextDown")?.gameObject;
-        if (downIndex != null) downIndex.SetActive(hasDown);
+
+        if (hasUp) RenderCard(SLOT_UP, allEntries[startIndex], startIndex + 1, talkedSpecialNPCs);
+        if (hasDown) RenderCard(SLOT_DOWN, allEntries[startIndex + 1], startIndex + 2, talkedSpecialNPCs);
+
+        // 只有一个 NPC 时隐藏下方槽位
+        SetSlotActive(SLOT_DOWN, hasDown);
+    }
+
+    /// <summary>
+    /// 渲染单个卡片槽位。slotSuffix=Up/Down，对应 cardContainer 下的子物体命名约定：
+    /// NameText{suffix} / PortraitImage{suffix} / StoryText{suffix} / IndexText{suffix}
+    /// 可选：CardFrame{suffix}（彩蛋金色边框）/ EasterEggBadge{suffix}（彩蛋标签）
+    /// </summary>
+    private void RenderCard(string slotSuffix, SpecialNPCData.Entry entry, int displayIndex, List<string> talkedSpecialNPCs)
+    {
+        if (entry == null || entry.specialNPCEntry == null) return;
+
+        var npc = entry.specialNPCEntry;
+        bool isUnlocked = talkedSpecialNPCs.Contains(npc.npcName);
+        bool isEasterEgg = npc.isEasterEgg;
+
+        SetText($"NameText{slotSuffix}", npc.npcName);
+        SetText($"StoryText{slotSuffix}", isUnlocked ? entry.storyText : "???");
+        SetText($"IndexText{slotSuffix}", $"第{displayIndex}个特殊NPC");
+
+        // 立绘：未解锁灰色剪影 + worldSprite，已解锁原色 + portrait
+        var portrait = cardContainer.Find($"PortraitImage{slotSuffix}")?.GetComponent<Image>();
+        if (portrait != null)
+        {
+            portrait.sprite = isUnlocked ? npc.GetPortrait() : npc.worldSprite;
+            portrait.color = isUnlocked ? Color.white : Color.gray;
+        }
+
+        // 边框：彩蛋金色，普通白色，未解锁灰色
+        var frame = cardContainer.Find($"CardFrame{slotSuffix}")?.GetComponent<Image>();
+        if (frame != null)
+        {
+            if (!isUnlocked) frame.color = FRAME_LOCKED;
+            else if (isEasterEgg) frame.color = FRAME_EASTER_EGG;
+            else frame.color = FRAME_NORMAL;
+        }
+
+        // 彩蛋标签：仅"已解锁 + 是彩蛋"时显示，避免剧透
+        var badge = cardContainer.Find($"EasterEggBadge{slotSuffix}")?.gameObject;
+        if (badge != null) badge.SetActive(isUnlocked && isEasterEgg);
+    }
+
+    private void SetText(string childName, string content)
+    {
+        var tmp = cardContainer.Find(childName)?.GetComponent<TextMeshProUGUI>();
+        if (tmp != null) tmp.text = content;
+    }
+
+    private void SetSlotActive(string slotSuffix, bool active)
+    {
+        string[] childNames = {
+            $"PortraitImage{slotSuffix}",
+            $"NameText{slotSuffix}",
+            $"StoryText{slotSuffix}",
+            $"IndexText{slotSuffix}",
+            $"CardFrame{slotSuffix}",
+            $"EasterEggBadge{slotSuffix}",
+        };
+        foreach (var name in childNames)
+        {
+            var go = cardContainer.Find(name)?.gameObject;
+            if (go != null) go.SetActive(active);
+        }
     }
 
     private void NextPage()

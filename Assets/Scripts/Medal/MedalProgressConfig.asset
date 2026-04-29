@@ -14,5 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   totalNPCs: 0
   nodes:
-  - threshold: 1
+  - threshold: 5
     unlockDescription: "\u56FE\u4E66\u9986"
+    icon: {fileID: 21300000, guid: e045cf75b08f3fb4385facbd9dea363c, type: 3}
+  - threshold: 10
+    unlockDescription: "\u4F20\u9001\u529F\u80FD"
+    icon: {fileID: 21300000, guid: ce0ff29680c4a784f864a963d9a2a592, type: 3}
+  - threshold: 20
+    unlockDescription: "\u641C\u7D22NPC"
+    icon: {fileID: 21300000, guid: ed087b259f934eb4fb39fbe2698e938c, type: 3}

@@ -14,6 +14,8 @@ public class MedalProgressConfig : ScriptableObject
         public int threshold;
         [Tooltip("解锁描述")]
         public string unlockDescription;
+        [Tooltip("节点图标（未达灰调，已达原色）")]
+        public Sprite icon;
     }
 
     [Tooltip("进度条节点配置")]

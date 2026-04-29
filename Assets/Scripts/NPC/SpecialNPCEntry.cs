@@ -32,6 +32,10 @@ public class SpecialNPCEntry : ScriptableObject
     [Tooltip("对话结束后是否可以重新触发（从头开始）")]
     public bool repeatable = true;
 
+    [Header("分类")]
+    [Tooltip("是否为彩蛋 NPC（在 TaskPanel 卡片上加彩蛋标记和金色边框）")]
+    public bool isEasterEgg = false;
+
     /// <summary>
     /// 获取对话立绘（优先使用 portrait，为空则回退到 worldSprite）
     /// </summary>

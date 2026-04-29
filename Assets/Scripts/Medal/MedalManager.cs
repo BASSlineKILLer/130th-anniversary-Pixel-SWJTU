@@ -186,6 +186,23 @@ public class MedalManager : MonoBehaviour
     }
 
     /// <summary>
+    /// [Debug 专用] 把传入的 NPC 名字全部塞进 talkedSpecialNPCs，绕过对话流程。
+    /// 用于 MedalDebugHotkeys 的 F2 一键解锁所有特殊 NPC 故事。
+    /// 不增加勋章数，仅影响 TaskPanel 的解锁态。
+    /// </summary>
+    public void DebugUnlockAllSpecial(IEnumerable<string> npcNames)
+    {
+        if (npcNames == null) return;
+        foreach (var name in npcNames)
+        {
+            if (string.IsNullOrEmpty(name)) continue;
+            if (talkedSpecialNPCs.Contains(name)) continue;
+            talkedSpecialNPCs.Add(name);
+        }
+        Debug.Log($"[MedalManager][DEBUG] 已解锁特殊 NPC，当前数量：{talkedSpecialNPCs.Count}");
+    }
+
+    /// <summary>
     /// 重置所有内存数据，用于开始新游戏时清空状态。
     /// （DontDestroyOnLoad 的单例不会被销毁，需手动重置）
     /// </summary>

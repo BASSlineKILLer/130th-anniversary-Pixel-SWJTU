@@ -72,6 +72,10 @@ public class MedalPanel : MonoBehaviour
 
         // 等待1秒后自动消失
         yield return new WaitForSeconds(0.5f);
+
+        // 等待期间 GameObject 可能已被 SetActive(false)（如切场景或外部 HidePanel），
+        // 此时 StartCoroutine 会抛 "inactive" 异常，必须先校验。
+        if (!gameObject.activeInHierarchy) yield break;
         yield return StartCoroutine(HidePanelWithFade());
     }
 
