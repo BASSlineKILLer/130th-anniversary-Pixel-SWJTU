@@ -8,7 +8,7 @@ public class SpecialNPCData : ScriptableObject
     [System.Serializable]
     public class Entry
     {
-        public NPCEntry npcEntry; // 拖入NPCEntry资产
+        public SpecialNPCEntry specialNPCEntry; // 拖入SpecialNPCEntry资产
         public string panelText;
         public string storyText;
     }
@@ -20,7 +20,7 @@ public class SpecialNPCData : ScriptableObject
     /// </summary>
     public bool IsSpecialNPC(string npcName)
     {
-        return entries.Exists(e => e.npcEntry != null && e.npcEntry.username == npcName);
+        return entries.Exists(e => e.specialNPCEntry != null && e.specialNPCEntry.npcName == npcName);
     }
 
     /// <summary>
@@ -28,7 +28,7 @@ public class SpecialNPCData : ScriptableObject
     /// </summary>
     public string GetPanelText(string npcName)
     {
-        var entry = entries.Find(e => e.npcEntry != null && e.npcEntry.username == npcName);
+        var entry = entries.Find(e => e.specialNPCEntry != null && e.specialNPCEntry.npcName == npcName);
         return entry?.panelText ?? "";
     }
 
@@ -37,7 +37,7 @@ public class SpecialNPCData : ScriptableObject
     /// </summary>
     public string GetStoryText(string npcName)
     {
-        var entry = entries.Find(e => e.npcEntry != null && e.npcEntry.username == npcName);
+        var entry = entries.Find(e => e.specialNPCEntry != null && e.specialNPCEntry.npcName == npcName);
         return entry?.storyText ?? "";
     }
 }

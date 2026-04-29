@@ -13,12 +13,6 @@ MonoBehaviour:
   m_Name: SpecialNPCData
   m_EditorClassIdentifier: 
   entries:
-  - npcEntry: {fileID: 11400000, guid: 4a4051b11ed5edb4e92aa80a4eecafbe, type: 2}
+  - specialNPCEntry: {fileID: 11400000, guid: 02d20fc08f1f5b94f869864a11e62c86, type: 2}
     panelText: "\u606D\u559C\u6536\u96C6\u5230\u6545\u4E8B1"
     storyText: "\u55EF\u5BF9111"
-  - npcEntry: {fileID: 11400000, guid: 10128bd363ecefe46a1db46f5bb200d0, type: 2}
-    panelText: "\u606D\u559C\u8FD9\u5C31\u7B97\u662F2"
-    storyText: "\u7B49\u6587\u6848\u7EC4\u5199222"
-  - npcEntry: {fileID: 11400000, guid: e1f694f9b4332264597021774b1c6b7c, type: 2}
-    panelText: "\u732B\u732B\u4E00\u62F3\u53EA\u4F1A\u840C\u6B7B\u6211"
-    storyText: "\u7B49\u6587\u6848\u7EC4\u51993ing"
