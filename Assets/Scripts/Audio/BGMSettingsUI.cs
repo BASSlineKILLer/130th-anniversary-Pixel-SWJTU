@@ -31,6 +31,9 @@ public class BGMSettingsUI : MonoBehaviour
     private void OnDisable()
     {
         RemoveListeners();
+        // 设置PlayerPrefs标记Setting面板已关闭，用于跨场景引导检测
+        PlayerPrefs.SetInt("SettingPanelClosed", 1);
+        PlayerPrefs.Save();
     }
 
     private void InitSlider()

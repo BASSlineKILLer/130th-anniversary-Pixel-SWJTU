@@ -20,6 +20,7 @@ public class MedalManager : MonoBehaviour
 
     public UnityEvent onMedalPanelHidden; // 勋章面板隐藏时的事件
     public UnityEvent onMedalCountChanged; // 勋章数量变化时的事件
+    public UnityEvent onMedalAddedForNPC; // 添加勋章时的事件
 
     public SpecialNPCData data; // 特殊NPC数据
 
@@ -125,6 +126,10 @@ public class MedalManager : MonoBehaviour
         }
 
         Debug.Log($"获得勋章！当前总数：{totalMedal} (NPC: {npcUniqueID})");
+
+        // 触发添加勋章的事件
+        onMedalAddedForNPC?.Invoke();
+
         return true;
     }
 
