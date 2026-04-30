@@ -12,6 +12,12 @@ public class MedalManager : MonoBehaviour
     public MedalPanel medalPanelComponent; // MedalPanel组件
     public NPCPanel npcPanelComponent; // NPCPanel组件
 
+    [Header("节点解锁通知")]
+    [Tooltip("勋章进度配置：节点阈值、描述、解锁回调都在里面")]
+    public MedalProgressConfig progressConfig;
+    [Tooltip("节点解锁弹窗（文本 = \"{unlockDescription}已解锁\"）")]
+    public SceneUnlockPanel sceneUnlockPanel;
+
     public UnityEvent onMedalPanelHidden; // 勋章面板隐藏时的事件
     public UnityEvent onMedalCountChanged; // 勋章数量变化时的事件
 
@@ -23,6 +29,7 @@ public class MedalManager : MonoBehaviour
     private int totalMedal = 0;
     private HashSet<string> talkedNPCs = new HashSet<string>(); // 已对话的NPC记录
     private List<string> talkedSpecialNPCs = new List<string>(); // 已对话的特殊NPC顺序记录
+    private readonly HashSet<int> reachedThresholds = new HashSet<int>(); // 已解锁过的节点阈值（避免重复触发 onUnlock）
     
     // 状态存档：记录图书馆是否已开启，防止过场动画和弹窗重复触发
     public bool IsLibraryUnlocked { get; set; } = false;
@@ -51,6 +58,7 @@ public class MedalManager : MonoBehaviour
             medalPanelComponent.gameObject.SetActive(false); // 一开始隐藏MedalPanel
             medalPanelComponent.onPanelHidden.AddListener(MedalPanelHidden);
         }
+        SyncReachedThresholds(); // 启动时将已达阈值全部标记为“已触发过”，避免重启/读档后重播弹窗
     }
 
     private void Update()
@@ -167,6 +175,52 @@ public class MedalManager : MonoBehaviour
     {
         Debug.Log("MedalPanelHidden called, invoking onMedalPanelHidden");
         onMedalPanelHidden?.Invoke();
+        // MedalPanel 弹窗隐藏后才检查节点解锁，避免两个弹窗同时出现
+        CheckNodeUnlocks();
+    }
+
+    /// <summary>
+    /// 起始化/读档后调用：将当前 totalMedal 已达到的阈值都标记为“已触发”，
+    /// 以免重启/读档时重复弹窗。仅报同步状态，不调用 onUnlock。
+    /// </summary>
+    private void SyncReachedThresholds()
+    {
+        reachedThresholds.Clear();
+        if (progressConfig == null || progressConfig.nodes == null) return;
+        foreach (var node in progressConfig.nodes)
+        {
+            if (node != null && totalMedal >= node.threshold)
+                reachedThresholds.Add(node.threshold);
+        }
+    }
+
+    /// <summary>
+    /// 检查是否有节点被本次 +1 跨过：是则调 onUnlock + 弹“{desc}已解锁”。
+    /// 多个节点同时跨过时会并发起多个 coroutine，文本会被后一个覆盖；
+    /// 实际业务上一次 +1 不可能跨过两个阈值，必要时再加队列。
+    /// </summary>
+    private void CheckNodeUnlocks()
+    {
+        if (progressConfig == null || progressConfig.nodes == null) return;
+        foreach (var node in progressConfig.nodes)
+        {
+            if (node == null) continue;
+            if (totalMedal < node.threshold) continue;
+            if (reachedThresholds.Contains(node.threshold)) continue;
+
+            reachedThresholds.Add(node.threshold);
+            Debug.Log($"[MedalManager] 节点解锁：threshold={node.threshold}, desc={node.unlockDescription}");
+
+            // 1) 触发 Inspector 中拖的回调
+            node.onUnlock?.Invoke();
+
+            // 2) 弹出“{desc}已解锁”
+            if (sceneUnlockPanel != null && !string.IsNullOrEmpty(node.unlockDescription))
+            {
+                string msg = $"{node.unlockDescription}已解锁";
+                StartCoroutine(sceneUnlockPanel.ShowPanelWithFade(msg));
+            }
+        }
     }
 
     /// 获取已对话的特殊NPC顺序列表
@@ -211,6 +265,7 @@ public class MedalManager : MonoBehaviour
         totalMedal = 0;
         talkedNPCs.Clear();
         talkedSpecialNPCs.Clear();
+        reachedThresholds.Clear();
         IsLibraryUnlocked = false;
         UpdateMedalUI();
         Debug.Log("[MedalManager] 状态已重置（新游戏）");
@@ -242,6 +297,7 @@ public class MedalManager : MonoBehaviour
         IsLibraryUnlocked = libraryUnlocked;
         UpdateMedalUI();
         onMedalCountChanged?.Invoke();
-        Debug.Log($"[MedalManager] 从存档恢复: 勋章={totalMedal}, 已对话NPC={talkedNPCs.Count}, 图书馆={libraryUnlocked}");
+        SyncReachedThresholds(); // 读档后同步节点解锁状态，避免重复弹窗
+        Debug.Log($"[MedalManager] 从存档恢复: 勋章={totalMedal}, 已对话 NPC={talkedNPCs.Count}, 图书馆={libraryUnlocked}");
     }
 }

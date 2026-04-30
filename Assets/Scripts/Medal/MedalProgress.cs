@@ -26,14 +26,18 @@ public class MedalProgress : MonoBehaviour
     [Header("UI 组件")]
     [Tooltip("进度条 Slider")]
     public Slider progressSlider;
-    [Tooltip("进度百分比文本")]
+    [Tooltip("进度文本")]
     public TextMeshProUGUI progressText;
+    [Tooltip("进度文本格式，{0}=当前数 {1}=总数。例：\"{0}/{1}\"、\"已收集 {0}/{1}\"、\"勋章进度 {0} / {1}\"")]
+    public string progressTextFormat = "{0}/{1}";
 
     [Header("节点图标")]
-    [Tooltip("节点图标的父容器（需与进度条横向对齐，用 RectTransform）")]
+    [Tooltip("节点图标的父容器（需与进度条横向对齐，用 RectTransform）。本模式下不要挂 LayoutGroup，由脚本按阈值比例定位")]
     public RectTransform nodeIconParent;
     [Tooltip("节点图标 Prefab：根节点需挂 Image，可选挂 TextMeshProUGUI 显示阈值/描述")]
     public GameObject nodeIconPrefab;
+    [Tooltip("节点图标的像素尺寸（宽×高），由脚本强制覆盖 prefab，避免 stretch 模式 0×0 不可见")]
+    public Vector2 nodeIconSize = new Vector2(64f, 64f);
 
     private readonly List<Image> nodeIcons = new List<Image>();
     private bool nodesBuilt;
@@ -116,7 +120,6 @@ public class MedalProgress : MonoBehaviour
         SetVisible(false); // 进入新场景默认隐藏，由玩家按 Tab 开启
         if (!sceneAllowsProgress)
             UnlockMovement(); // 切场景前可能仍处展开态，确保解锁玩家移动
-        Debug.Log($"[MedalProgress] 场景={scene.name}, tabEnabled={tabEnabled}, hasCanvas={rootCanvas != null}");
     }
 
     void Update()
@@ -152,11 +155,10 @@ public class MedalProgress : MonoBehaviour
         int current = MedalManager.Instance.GetMedalCount();
         progressSlider.value = current;
 
-        // 更新进度百分比文本
-        if (progressText != null && total > 0)
+        // 进度文本：模板由 Inspector 配置，{0}=当前 {1}=总数
+        if (progressText != null)
         {
-            float percentage = (float)current / total * 100;
-            progressText.text = $"进度：{percentage:F1}%";
+            progressText.text = string.Format(progressTextFormat, current, total);
         }
 
         if (!nodesBuilt) RebuildNodes(total);
@@ -164,8 +166,8 @@ public class MedalProgress : MonoBehaviour
     }
 
     /// <summary>
-    /// 根据 config.nodes 在 nodeIconParent 上排放节点图标。
-    /// X 坐标按 threshold/total 等比映射到 nodeIconParent 宽度上，与 slider 横向对齐。
+    /// 按 config.nodes 在 nodeIconParent 下创建节点图标实例，并按 threshold/total 比例横向定位。
+    /// X 坐标 = nodeIconParent.rect.width * (threshold / total)，与 slider 的填充进度对齐。
     /// </summary>
     private void RebuildNodes(int total)
     {
@@ -174,7 +176,10 @@ public class MedalProgress : MonoBehaviour
 
         ClearNodeIcons();
 
+        // 强制刷布局，确保 rect.width 已就绪（首次开启时 Canvas 可能还没算）
+        LayoutRebuilder.ForceRebuildLayoutImmediate(nodeIconParent);
         float width = nodeIconParent.rect.width;
+
         foreach (var node in config.nodes)
         {
             if (node == null) continue;
@@ -183,10 +188,11 @@ public class MedalProgress : MonoBehaviour
             if (rt != null)
             {
                 float ratio = Mathf.Clamp01((float)node.threshold / total);
-                // 以容器左边为 0，右边为 width；锚点用左下方便定位
+                // 锚点固定到容器左中，X = width * ratio；强制 sizeDelta 以兼容 prefab 可能的 stretch
                 rt.anchorMin = new Vector2(0f, 0.5f);
                 rt.anchorMax = new Vector2(0f, 0.5f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.sizeDelta = nodeIconSize;
                 rt.anchoredPosition = new Vector2(width * ratio, 0f);
             }
 

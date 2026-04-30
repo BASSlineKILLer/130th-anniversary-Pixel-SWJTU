@@ -356,6 +356,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6401917529718083335}
   - component: {fileID: 8015870642895027827}
+  - component: {fileID: 4526296758666363905}
   m_Layer: 0
   m_Name: MedalManager
   m_TagString: Untagged
@@ -391,14 +392,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 42efa3de501784c429f450c207a0d7f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  medalText: {fileID: 0}
-  medalPanelComponent: {fileID: 0}
+  medalText: {fileID: 3817312959740040296}
+  medalPanelComponent: {fileID: 6454714240418934273}
   npcPanelComponent: {fileID: 0}
   onMedalPanelHidden:
     m_PersistentCalls:
       m_Calls: []
+  onMedalCountChanged:
+    m_PersistentCalls:
+      m_Calls: []
   data: {fileID: 11400000, guid: 588ab1bbe3bb419418e77bcb16d77016, type: 2}
   spawnPoint: {fileID: 0}
+--- !u!114 &4526296758666363905
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7503835127509226454}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1aa921c74916d234e893a62f4fd31b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  specialNPCData: {fileID: 0}
 --- !u!1 &8337323563749594180
 GameObject:
   m_ObjectHideFlags: 0
