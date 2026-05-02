@@ -123,19 +123,14 @@ namespace SWJTUGame.UI
         // ══════════════════════════════════════════════════════════
         private void HookAllButtons()
         {
-            // FindObjectsOfType(true) 包括未激活的按钮（如暂停面板中的按钮）
+            // FindObjectsOfTypeAll 包括未激活的按钮（如暂停面板中的按钮）
             Button[] allButtons = Resources.FindObjectsOfTypeAll<Button>();
             int count = 0;
 
             foreach (Button btn in allButtons)
             {
-                // 跳过预制体中的按钮（只处理场景中实际存在的）
-                if (btn.gameObject.scene.name == null || !btn.gameObject.scene.isLoaded)
-                    continue;
-
-                // 避免重复注册：用一个标记组件检测
-                if (btn.GetComponent<UIAudioHooked>() != null)
-                    continue;
+                if (!IsHookableButton(btn)) continue;
+                if (btn.GetComponent<UIAudioHooked>() != null) continue;
 
                 btn.onClick.AddListener(() => Play(SoundType.Click));
                 btn.gameObject.AddComponent<UIAudioHooked>(); // 打标记
@@ -146,6 +141,23 @@ namespace SWJTUGame.UI
             {
                 Debug.Log($"[UIAudioManager] 已为 {count} 个按钮注册点击音效");
             }
+        }
+
+        /// <summary>
+        /// 判断一个 Button 是否是应该被自动 hook 的运行时 UI。
+        /// 过滤掉：prefab assets、Prefab Stage 预览场景、未加载场景。
+        /// 防止给 prefab 本体 AddComponent 导致 “missing script” 保存失败。
+        /// </summary>
+        private static bool IsHookableButton(Button btn)
+        {
+            var scene = btn.gameObject.scene;
+            if (!scene.IsValid()) return false;            // prefab asset
+            if (string.IsNullOrEmpty(scene.name)) return false;
+            if (!scene.isLoaded) return false;
+            // Prefab Stage 预览场景的 buildIndex == -1；实场景为 >= -1 但 path 不为空
+            // 用 path 为空判定预览场景最可靠
+            if (string.IsNullOrEmpty(scene.path)) return false;
+            return true;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -207,11 +219,4 @@ namespace SWJTUGame.UI
         /// <summary>播放对话框关闭音效</summary>
         public static void PlayDialogueClose() => Play(SoundType.DialogueClose);
     }
-
-    /// <summary>
-    /// 内部标记组件，用于防止重复注册按钮的点击音效
-    /// 自动隐藏在 Inspector 中，无需关注
-    /// </summary>
-    [HideInInspector]
-    internal class UIAudioHooked : MonoBehaviour { }
 }

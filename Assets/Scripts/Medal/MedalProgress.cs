@@ -60,6 +60,13 @@ public class MedalProgress : MonoBehaviour
         SetVisible(false);
         tabEnabled = false;
 
+        // DontDestroyOnLoad 仅对根对象生效；若被嵌在其他 UI 下，先脱离到根，
+        // 否则会触发 m_Hierarchies 断言（Assertion failed on expression: ...）
+        if (transform.parent != null)
+        {
+            Debug.LogWarning($"[MedalProgress] {name} 不是场景根对象，已自动脱离父级以使用 DontDestroyOnLoad。建议把 prefab 直接放在场景根。");
+            transform.SetParent(null, true);
+        }
         DontDestroyOnLoad(gameObject);
         SceneManager.sceneLoaded += OnSceneLoaded;
 
