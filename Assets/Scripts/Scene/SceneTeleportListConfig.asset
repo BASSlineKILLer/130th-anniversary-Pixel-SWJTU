@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 779af9ffcb8a07342972e5abb31ec702, type: 3}
+  m_Name: SceneTeleportListConfig
+  m_EditorClassIdentifier: 
+  entries:
+  - sceneName: 1-1
+    displayName: "\u8D77\u70B9"
+    icon: {fileID: 21300000, guid: ce0ff29680c4a784f864a963d9a2a592, type: 3}
+    spawnPointId: 10
+  - sceneName: 2-1
+    displayName: "\u56FE\u4E66\u9986\u5DE6\u4FA7"
+    icon: {fileID: 21300000, guid: e045cf75b08f3fb4385facbd9dea363c, type: 3}
+    spawnPointId: 10
+  - sceneName: 2-4
+    displayName: "\u706B\u8F66\u5E7F\u573A"
+    icon: {fileID: -1563047777, guid: f25fe4ec710b9ca44b3450adaf8e7748, type: 3}
+    spawnPointId: 10

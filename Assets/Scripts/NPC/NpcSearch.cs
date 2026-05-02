@@ -3,31 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-/// <summary>
-/// 搜索功能锁的对接 API。
-/// 任务系统 / 剧情系统完成特定条件后，调用 <see cref="UnlockByQuest"/> 解除剧情这一道锁。
-/// 注意：解锁是 AND 关系——勋章数达标 且 任务已解锁，二者皆满足才能使用搜索。
-/// </summary>
-public static class SearchLockState
-{
-    /// <summary>任务系统解锁开关。默认 false，解锁后在同一局游戏内保持 true。</summary>
-    public static bool QuestUnlocked { get; private set; }
-
-    /// <summary>任务完成时调用：永久解锁（本局游戏内）。</summary>
-    public static void UnlockByQuest()
-    {
-        if (QuestUnlocked) return;
-        QuestUnlocked = true;
-        UnityEngine.Debug.Log("[SearchLockState] 搜索功能已由任务系统解锁");
-    }
-
-    /// <summary>新游戏 / 存档切换时重置。</summary>
-    public static void ResetForNewGame()
-    {
-        QuestUnlocked = false;
-    }
-}
-
 public class NpcSearch : MonoBehaviour
 {
     [Header("UI 组件")]
@@ -43,19 +18,16 @@ public class NpcSearch : MonoBehaviour
     [Tooltip("错误文本")]
     public TextMeshProUGUI errorText;
 
-    [Header("功能锁（AND 关系：勋章 + 剧情，两者都满足才解锁）")]
-    [Tooltip("解锁搜索功能所需的勋章数量")]
-    [Min(0)] public int requiredMedalCount = 5;
+    [Header("场景传送列表（可选）")]
+    [Tooltip("场景传送面板；由独立的 SceneTeleportList 脚本管理。打开入口由 OpenTeleportList 提供")]
+    public SceneTeleportList teleportListPanel;
 
-    [Tooltip("勋章不足时显示的提示，{0} 会被替换为所需勋章数")]
-    [TextArea] public string medalLockedHint = "需要收集 {0} 枚勋章才能解锁搜索功能";
+    [Header("功能锁节点 ID（对应 MedalProgressConfig.nodes[i].nodeId）")]
+    [Tooltip("解锁搜索功能的节点 ID")]
+    public string searchNodeId = "NpcSearch";
 
-    [Tooltip("关键剧情未触发时显示的提示")]
-    [TextArea] public string storyLockedHint = "完成关键剧情后才能解锁搜索功能";
-
-    [Header("调试")]
-    [Tooltip("调试用：勾上后跳过所有功能锁检查（勋章 + 剧情），方便测试。打包前请取消勾选。")]
-    [SerializeField] private bool debugBypassLock = false;
+    [Tooltip("解锁场景传送列表的节点 ID")]
+    public string teleportListNodeId = "TeleportList";
 
     private bool isInRange = false;
     private bool isSearching = false;
@@ -73,6 +45,7 @@ public class NpcSearch : MonoBehaviour
 
         if (searchPanel != null) searchPanel.SetActive(false);
         if (errorPanel != null) errorPanel.SetActive(false);
+        if (teleportListPanel != null) teleportListPanel.gameObject.SetActive(false);
 
         if (searchInput != null)
             searchInput.onEndEdit.AddListener(OnSearch);
@@ -97,6 +70,11 @@ public class NpcSearch : MonoBehaviour
             searchInput = canvas.GetComponentInChildren<TMP_InputField>(true);
         if (errorText == null && errorPanel != null)
             errorText = errorPanel.GetComponentInChildren<TextMeshProUGUI>(true);
+            
+        if (teleportListPanel == null)
+        {
+            teleportListPanel = canvas.GetComponentInChildren<SceneTeleportList>(true);
+        }
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -129,12 +107,21 @@ public class NpcSearch : MonoBehaviour
         }
         else if (isInRange && Input.GetKeyDown(KeyCode.Space))
         {
-            // 功能锁：勋章和剧情必须都满足，否则按优先级给对应提示
-            string lockedReason = GetLockedReason();
-            if (lockedReason != null)
+            if (MedalManager.Instance != null)
             {
-                ShowHint(lockedReason);
-                return;
+                // 先检查较小阈值的传送功能是否解锁
+                if (!MedalManager.Instance.IsNodeUnlocked(teleportListNodeId))
+                {
+                    MedalManager.Instance.ShowLockedHint(teleportListNodeId);
+                    return;
+                }
+                
+                // 再检查较高阈值的搜索功能是否解锁
+                if (!MedalManager.Instance.IsNodeUnlocked(searchNodeId))
+                {
+                    MedalManager.Instance.ShowLockedHint(searchNodeId);
+                    return;
+                }
             }
 
             searchPanel.SetActive(true);
@@ -145,27 +132,34 @@ public class NpcSearch : MonoBehaviour
     }
 
     /// <summary>
-    /// 返回未解锁的原因提示；已解锁返回 null。
-    /// 优先级：勋章不足 > 剧情未触发。
+    /// 打开场景传送列表面板（供 UI 按钮调用）
     /// </summary>
-    private string GetLockedReason()
+    public void OpenTeleportList()
     {
-        if (debugBypassLock) return null;
+        if (MedalManager.Instance != null && !MedalManager.Instance.IsNodeUnlocked(teleportListNodeId))
+        {
+            MedalManager.Instance.ShowLockedHint(teleportListNodeId);
+            return;
+        }
 
-        if (!IsMedalUnlocked())
-            return string.Format(medalLockedHint, requiredMedalCount);
+        if (teleportListPanel == null)
+        {
+            // 尝试再次查找
+            var canvas = GameObject.Find("SearchCanvas");
+            if (canvas != null)
+            {
+                teleportListPanel = canvas.GetComponentInChildren<SceneTeleportList>(true);
+            }
+        }
 
-        if (!SearchLockState.QuestUnlocked)
-            return storyLockedHint;
-
-        return null;
-    }
-
-    private bool IsMedalUnlocked()
-    {
-        if (requiredMedalCount <= 0) return true;
-        if (MedalManager.Instance == null) return false;
-        return MedalManager.Instance.GetMedalCount() >= requiredMedalCount;
+        if (teleportListPanel != null)
+        {
+            teleportListPanel.gameObject.SetActive(true);
+        }
+        else
+        {
+            Debug.LogError("[NpcSearch] TeleportListPanel 未找到，无法打开传送列表。");
+        }
     }
 
     private void ShowHint(string message)

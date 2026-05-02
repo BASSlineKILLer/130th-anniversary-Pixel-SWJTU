@@ -10,6 +10,8 @@ public class SceneUnlockPanel : MonoBehaviour
 
     private bool isVisible = false; // 是否正在显示
 
+    private Coroutine currentCoroutine;
+
     private void Start()
     {
         if (!isVisible)
@@ -24,17 +26,27 @@ public class SceneUnlockPanel : MonoBehaviour
         }
     }
 
-
-
     /// 显示面板并设置文字（带淡入效果）
     /// <param name="message">要显示的消息</param>
-    public System.Collections.IEnumerator ShowPanelWithFade(string message)
+    public void Show(string message)
     {
-        isVisible = true;
-
-        // 1. 必须先激活对象，否则无法运行后续逻辑
+        // 1. 必须先激活对象，否则协程无法启动
         gameObject.SetActive(true);
         transform.SetAsLastSibling(); // 确保在最上层
+
+        // 2. 如果之前有正在运行的动画协程，先停止它
+        if (currentCoroutine != null)
+        {
+            StopCoroutine(currentCoroutine);
+        }
+
+        // 3. 启动新的动画协程
+        currentCoroutine = StartCoroutine(ShowPanelWithFade(message));
+    }
+
+    private System.Collections.IEnumerator ShowPanelWithFade(string message)
+    {
+        isVisible = true;
 
         if (panelText != null) {
             panelText.text = message;
@@ -54,11 +66,12 @@ public class SceneUnlockPanel : MonoBehaviour
 
         // 等待0.7秒后自动消失
         yield return new WaitForSeconds(0.7f);
-        yield return StartCoroutine(HidePanelWithFade());
+        
+        // 淡出过程
+        yield return StartCoroutine(FadeOutAndHide());
     }
 
-    /// 隐藏面板（带淡出效果）
-    public System.Collections.IEnumerator HidePanelWithFade()
+    private System.Collections.IEnumerator FadeOutAndHide()
     {
         isVisible = false; // 立即设置为不可见，防止重复调用
 
@@ -70,6 +83,19 @@ public class SceneUnlockPanel : MonoBehaviour
 
         // 隐藏对象
         gameObject.SetActive(false);
+        currentCoroutine = null;
+    }
+
+    /// 隐藏面板（带淡出效果）
+    public void Hide()
+    {
+        if (!gameObject.activeInHierarchy) return;
+
+        if (currentCoroutine != null)
+        {
+            StopCoroutine(currentCoroutine);
+        }
+        currentCoroutine = StartCoroutine(FadeOutAndHide());
     }
 
     private System.Collections.IEnumerator FadeIn(CanvasGroup panel, float duration)

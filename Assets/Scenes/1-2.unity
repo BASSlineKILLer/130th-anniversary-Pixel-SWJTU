@@ -15516,6 +15516,7 @@ MonoBehaviour:
   deadZoneHeight: 0.05
   boundsCollider: {fileID: 873768267}
   confinerDamping: 0.1
+  enablePixelPerfect: 1
 --- !u!1 &522902740
 GameObject:
   m_ObjectHideFlags: 0
@@ -15557,8 +15558,8 @@ GameObject:
   m_Component:
   - component: {fileID: 524403619}
   - component: {fileID: 524403622}
-  - component: {fileID: 524403621}
   - component: {fileID: 524403620}
+  - component: {fileID: 524403623}
   m_Layer: 0
   m_Name: 1-2 east
   m_TagString: Untagged
@@ -15594,23 +15595,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spawnPointId: 2
---- !u!114 &524403621
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 524403618}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c8dfc54f300c5dc4ca48a2d62952d673, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mode: 1
-  targetPosition: {fileID: 0}
-  targetSceneName: 2-1
-  targetSpawnPointId: 0
-  cooldown: 1
 --- !u!61 &524403622
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -15656,6 +15640,22 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
+--- !u!114 &524403623
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 524403618}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 548ee0f281e4dfa438624692a842402a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetSceneName: 2-1
+  targetSpawnPointId: 0
+  nodeId: Library
+  playerTag: Player
 --- !u!1 &550403284
 GameObject:
   m_ObjectHideFlags: 0
@@ -16676,6 +16676,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2803383627041468139, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 4547011080275546241, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -16886,11 +16890,11 @@ PolygonCollider2D:
   m_AutoTiling: 0
   m_Points:
     m_Paths:
-    - - {x: -0.06549835, y: 1.3274689}
-      - {x: -1.0773306, y: 1.3361013}
-      - {x: -1.0261397, y: -20.944279}
-      - {x: 47.275524, y: -21.46397}
-      - {x: 47.180595, y: 1.245594}
+    - - {x: -0.06549835, y: 0.94802094}
+      - {x: -1.0773306, y: 0.9274633}
+      - {x: -0.8802047, y: -20.973461}
+      - {x: 46.72094, y: -20.99696}
+      - {x: 46.626026, y: 1.1288414}
   m_UseDelaunayMesh: 0
 --- !u!1 &901333079
 GameObject:
@@ -16925,11 +16929,10 @@ MonoBehaviour:
   searchInput: {fileID: 0}
   searchPanel: {fileID: 0}
   errorPanel: {fileID: 0}
-  errorText: {fileID: 0}
-  requiredMedalCount: 5
-  medalLockedHint: "\u9700\u8981\u6536\u96C6 {0} \u679A\u52CB\u7AE0\u624D\u80FD\u89E3\u9501\u641C\u7D22\u529F\u80FD"
-  storyLockedHint: "\u5B8C\u6210\u5173\u952E\u5267\u60C5\u540E\u624D\u80FD\u89E3\u9501\u641C\u7D22\u529F\u80FD"
-  debugBypassLock: 0
+  errorText: {fileID: 2100585022}
+  teleportListPanel: {fileID: 2100585021}
+  searchNodeId: NpcSearch
+  teleportListNodeId: TeleportList
 --- !u!61 &901333081
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -59219,6 +59222,28 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 164228336558928252, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
   m_PrefabInstance: {fileID: 2100585019}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2100585021 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7234268146622770703, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+  m_PrefabInstance: {fileID: 2100585019}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f80eb9b37e85fea439655bacc71456d0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &2100585022 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 871387014127568273, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+  m_PrefabInstance: {fileID: 2100585019}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2140189908
 GameObject:
   m_ObjectHideFlags: 0
@@ -59248,9 +59273,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 548ee0f281e4dfa438624692a842402a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sceneUnlockPanel: {fileID: 0}
-  libraryPortal: {fileID: 0}
-  requiredMedalCount: 3
+  targetSceneName: Library
+  targetSpawnPointId: 
+  nodeId: Library
+  playerTag: Player
 --- !u!4 &2140189910
 Transform:
   m_ObjectHideFlags: 0

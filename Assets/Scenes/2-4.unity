@@ -14432,6 +14432,7 @@ MonoBehaviour:
   deadZoneHeight: 0.05
   boundsCollider: {fileID: 873768267}
   confinerDamping: 0.1
+  enablePixelPerfect: 1
 --- !u!114 &519420035
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -29048,6 +29049,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2803383627041468139, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 4547011080275546241, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -29299,10 +29304,9 @@ MonoBehaviour:
   searchPanel: {fileID: 0}
   errorPanel: {fileID: 0}
   errorText: {fileID: 0}
-  requiredMedalCount: 5
-  medalLockedHint: "\u9700\u8981\u6536\u96C6 {0} \u679A\u52CB\u7AE0\u624D\u80FD\u89E3\u9501\u641C\u7D22\u529F\u80FD"
-  storyLockedHint: "\u5B8C\u6210\u5173\u952E\u5267\u60C5\u540E\u624D\u80FD\u89E3\u9501\u641C\u7D22\u529F\u80FD"
-  debugBypassLock: 0
+  teleportListPanel: {fileID: 0}
+  searchNodeId: NpcSearch
+  teleportListNodeId: TeleportList
 --- !u!61 &901333081
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -99581,6 +99585,7 @@ Transform:
   m_Children:
   - {fileID: 1598734875}
   - {fileID: 931793077}
+  - {fileID: 2041795286}
   m_Father: {fileID: 1088166153}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1506818049
@@ -105314,6 +105319,97 @@ CanvasGroup:
   m_CorrespondingSourceObject: {fileID: 687183060795485432, guid: a07931a09c3f3d642b9e312982e1daf7, type: 3}
   m_PrefabInstance: {fileID: 510923471766594238}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2041795285
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2041795286}
+  - component: {fileID: 2041795288}
+  - component: {fileID: 2041795287}
+  m_Layer: 0
+  m_Name: 2-4 south (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2041795286
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2041795285}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 72.18, y: 63.48, z: 0}
+  m_LocalScale: {x: 1.1847377, y: 0.905212, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1489181406}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2041795287
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2041795285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ec349dba1398b742a07eca7dcbc4264, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spawnPointId: 10
+--- !u!61 &2041795288
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2041795285}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0, y: 0}
+    oldSize: {x: 0, y: 0}
+    newSize: {x: 0, y: 0}
+    adaptiveTilingThreshold: 0
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0
 --- !u!1001 &2100585019
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -105445,9 +105541,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 548ee0f281e4dfa438624692a842402a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sceneUnlockPanel: {fileID: 0}
-  libraryPortal: {fileID: 0}
-  requiredMedalCount: 3
+  targetSceneName: Library
+  targetSpawnPointId: 
+  nodeId: Library
+  playerTag: Player
 --- !u!4 &2140189910
 Transform:
   m_ObjectHideFlags: 0

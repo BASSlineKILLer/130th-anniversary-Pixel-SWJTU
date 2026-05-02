@@ -43,6 +43,16 @@ public class MedalManager : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             Debug.Log("MedalManager Instance created");
+            
+            // 自动加载 progressConfig
+            if (progressConfig == null)
+            {
+                progressConfig = Resources.Load<MedalProgressConfig>("NPCData/MedalProgressConfig");
+                if (progressConfig == null)
+                {
+                    Debug.LogWarning("[MedalManager] 未能在 Resources/NPCData 目录下找到 MedalProgressConfig，请在 Inspector 中手动分配。");
+                }
+            }
         }
         else
         {
@@ -59,6 +69,21 @@ public class MedalManager : MonoBehaviour
             medalPanelComponent.gameObject.SetActive(false); // 一开始隐藏MedalPanel
             medalPanelComponent.onPanelHidden.AddListener(MedalPanelHidden);
         }
+        
+        // 尝试自动寻找场景中的 SceneUnlockPanel
+        if (sceneUnlockPanel == null)
+        {
+            sceneUnlockPanel = FindObjectOfType<SceneUnlockPanel>(true);
+            if (sceneUnlockPanel != null)
+            {
+                Debug.Log("[MedalManager] 自动找到并绑定了 SceneUnlockPanel");
+            }
+            else 
+            {
+                Debug.LogWarning("[MedalManager] 未能自动找到 SceneUnlockPanel，请确保场景中存在挂载该脚本的面板");
+            }
+        }
+        
         SyncReachedThresholds(); // 启动时将已达阈值全部标记为“已触发过”，避免重启/读档后重播弹窗
     }
 
@@ -200,9 +225,8 @@ public class MedalManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 检查是否有节点被本次 +1 跨过：是则调 onUnlock + 弹“{desc}已解锁”。
-    /// 多个节点同时跨过时会并发起多个 coroutine，文本会被后一个覆盖；
-    /// 实际业务上一次 +1 不可能跨过两个阈值，必要时再加队列。
+    /// 检查是否有节点被本次 +1 跨过：是则弹“{desc}已解锁”。
+    /// 业务副作用由各模块主动查询 <see cref="IsNodeUnlocked"/>，不再集中 Invoke。
     /// </summary>
     private void CheckNodeUnlocks()
     {
@@ -214,18 +238,69 @@ public class MedalManager : MonoBehaviour
             if (reachedThresholds.Contains(node.threshold)) continue;
 
             reachedThresholds.Add(node.threshold);
-            Debug.Log($"[MedalManager] 节点解锁：threshold={node.threshold}, desc={node.unlockDescription}");
+            Debug.Log($"[MedalManager] 节点解锁：id={node.nodeId}, threshold={node.threshold}, desc={node.unlockDescription}");
 
-            // 1) 触发 Inspector 中拖的回调
-            node.onUnlock?.Invoke();
-
-            // 2) 弹出“{desc}已解锁”
             if (sceneUnlockPanel != null && !string.IsNullOrEmpty(node.unlockDescription))
             {
                 string msg = $"{node.unlockDescription}已解锁";
-                StartCoroutine(sceneUnlockPanel.ShowPanelWithFade(msg));
+                sceneUnlockPanel.Show(msg);
             }
         }
+    }
+
+    // ══════════════════════════════════════════════════════════
+    //  节点解锁查询 API（业务方门禁使用）
+    // ══════════════════════════════════════════════════════════
+
+    /// <summary>按 nodeId 查询节点配置。未配置返回 null。</summary>
+    public MedalProgressConfig.Node GetNode(string nodeId)
+    {
+        if (progressConfig == null)
+        {
+            Debug.LogError($"[MedalManager] progressConfig 丢失！请在 Inspector 中为 MedalManager 赋值 MedalProgressConfig 资产！(查询节点: {nodeId})");
+            return null;
+        }
+        return progressConfig.FindNode(nodeId);
+    }
+
+    /// <summary>
+    /// 判断某能力节点是否已解锁（当前勋章数是否达到 threshold）。
+    /// 节点不存在视为未解锁（安全失败）。
+    /// </summary>
+    public bool IsNodeUnlocked(string nodeId)
+    {
+        var node = GetNode(nodeId);
+        if (node == null) return false;
+        return totalMedal >= node.threshold;
+    }
+
+    /// <summary>
+    /// 未达阈值时统一弹出提示（复用 SceneUnlockPanel）。
+    /// 提示文本来自 config 的 lockedHint，支持 {0} 占位为 threshold。
+    /// </summary>
+    public void ShowLockedHint(string nodeId)
+    {
+        var node = GetNode(nodeId);
+        if (node == null)
+        {
+            Debug.LogWarning($"[MedalManager] ShowLockedHint 找不到节点 id={nodeId}，或者 progressConfig 未配置");
+            return;
+        }
+        if (sceneUnlockPanel == null)
+        {
+            // Try to find it one more time dynamically when needed
+            sceneUnlockPanel = FindObjectOfType<SceneUnlockPanel>(true);
+            if (sceneUnlockPanel == null)
+            {
+                Debug.LogError("[MedalManager] sceneUnlockPanel 丢失！请在场景中确保存在 SceneUnlockPanel 组件！");
+                return;
+            }
+        }
+        string hint = string.IsNullOrEmpty(node.lockedHint)
+            ? $"需要 {node.threshold} 枚勋章才能解锁"
+            : string.Format(node.lockedHint, node.threshold);
+            
+        sceneUnlockPanel.Show(hint);
     }
 
     /// 获取已对话的特殊NPC顺序列表
