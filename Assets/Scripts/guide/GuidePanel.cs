@@ -1,12 +1,29 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
-using UnityEngine.Events;
 
 public class GuidePanel : MonoBehaviour
 {
+    private const string GUIDE_COMPLETED_KEY = "GuideCompleted";
+
+    public enum AdvanceMode
+    {
+        MovementKey,
+        KeyDown,
+        MedalAdded,
+        MedalPanelHidden,
+        DelayComplete,
+        Sprint
+    }
+
+    [System.Serializable]
+    public class GuideStep
+    {
+        public GameObject panel;
+        public AdvanceMode advanceMode;
+        public KeyCode keyCode;
+        public float delaySeconds = 2f;
+    }
+
     [Header("Panels")]
     public GameObject panel1;
     public GameObject panel2;
@@ -14,152 +31,84 @@ public class GuidePanel : MonoBehaviour
     public GameObject panel4;
     public GameObject panel5;
 
+    [Header("Steps")]
+    public List<GuideStep> steps = new List<GuideStep>();
+
     [Header("Other Panels for Detection")]
     // public GameObject dialoguePanel; // 对话面板
 
-    private int currentStep = 0;
+    private int currentStepIndex = -1;
     private bool isFirstTime = true;
+    private bool isCompleted;
     // private bool dialoguePanelWasActive = false;
 
     private void Start()
     {
+        BuildLegacyStepsIfNeeded();
+        HideAllPanels();
+
         // 检查是否第一次进入场景
-        if (PlayerPrefs.GetInt("GuideCompleted", 0) == 1)
+        if (PlayerPrefs.GetInt(GUIDE_COMPLETED_KEY, 0) == 1)
         {
             isFirstTime = false;
             return;
         }
 
-        // 隐藏所有面板
-        HideAllPanels();
-
-        // 显示panel1
-        if (panel1 != null)
-        {
-            panel1.SetActive(true);
-        }
-        currentStep = 1;
+        ShowStep(0);
 
         // 添加事件监听
         if (MedalManager.Instance != null)
         {
-            MedalManager.Instance.onMedalAddedForNPC.AddListener(() => {
-                if (currentStep == 2) {
-                    HidePanel(panel2);
-                    currentStep = 3;
-                }
-            });
-            MedalManager.Instance.onMedalPanelHidden.AddListener(() => {
-                if (currentStep == 3) {
-                    ShowPanel(panel3);
-                    currentStep = 4;
-                }
-            });
+            MedalManager.Instance.onMedalAddedForNPC.AddListener(OnMedalAdded);
+            MedalManager.Instance.onMedalPanelHidden.AddListener(OnMedalPanelHidden);
         }
     }
 
     private void Update()
     {
         if (!isFirstTime) return;
+        if (isCompleted) return;
 
-        switch (currentStep)
-        {
-            case 1:
-                // 等待按下WASD
-                if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.R))
-                {
-                    HidePanel(panel1);
-                    ShowPanel(panel2);
-                    currentStep = 2;
-                }
-                break;
+        var step = GetCurrentStep();
+        if (step == null) return;
+        if (CanAdvanceByInput(step)) AdvanceStep();
+    }
 
-            case 2:
-                // 等待对话面板弹出
-                /*
-                if (dialoguePanel != null)
-                {
-                    if (!dialoguePanelWasActive && dialoguePanel.activeSelf)
-                    {
-                        HidePanel(panel2);
-                        ShowPanel(panel3);
-                        currentStep = 3;
-                    }
-                    dialoguePanelWasActive = dialoguePanel.activeSelf;
-                }
-                */
-                break;
-
-            case 3:
-                // 等待对话面板隐藏
-                /*
-                if (dialoguePanel != null)
-                {
-                    if (dialoguePanelWasActive && !dialoguePanel.activeSelf)
-                    {
-                        HidePanel(panel3);
-                        currentStep = 4;
-                    }
-                    dialoguePanelWasActive = dialoguePanel.activeSelf;
-                }
-                */
-                break;
-
-            case 4:
-                // 等待按Tab键
-                if (Input.GetKeyDown(KeyCode.Tab))
-                {
-                    HidePanel(panel3);
-                    currentStep = 5;
-                }
-                break;
-
-            case 5:
-                // 等待再按Tab键
-                if (Input.GetKeyDown(KeyCode.Tab))
-                {
-                    ShowPanel(panel4);
-                    currentStep = 6;
-                }
-                break;
-
-            case 6:
-                // 等待按Esc键
-                if (Input.GetKeyDown(KeyCode.Escape))
-                {
-                    HidePanel(panel4);
-                    currentStep = 7;
-                }
-                break;
-
-            case 7:
-                // 等待再按Esc键
-                if (Input.GetKeyDown(KeyCode.Escape))
-                {
-                    ShowPanel(panel5);
-                    currentStep = 8;
-                    // 2秒后隐藏panel5并标记完成
-                    Invoke("CompleteGuide", 2f);
-                }
-                break;
-        }
+    private void OnDestroy()
+    {
+        if (MedalManager.Instance == null) return;
+        MedalManager.Instance.onMedalAddedForNPC.RemoveListener(OnMedalAdded);
+        MedalManager.Instance.onMedalPanelHidden.RemoveListener(OnMedalPanelHidden);
     }
 
     private void CompleteGuide()
     {
-        HidePanel(panel5);
+        isCompleted = true;
+        HideAllPanels();
         // 标记引导完成
-        PlayerPrefs.SetInt("GuideCompleted", 1);
+        PlayerPrefs.SetInt(GUIDE_COMPLETED_KEY, 1);
+        PlayerPrefs.Save();
+    }
+
+    public static void ResetGuideForNewGame()
+    {
+        PlayerPrefs.DeleteKey(GUIDE_COMPLETED_KEY);
+        PlayerPrefs.Save();
+    }
+
+    public static void SkipGuideForContinueGame()
+    {
+        PlayerPrefs.SetInt(GUIDE_COMPLETED_KEY, 1);
         PlayerPrefs.Save();
     }
 
     private void HideAllPanels()
     {
-        if (panel1 != null) panel1.SetActive(false);
-        if (panel2 != null) panel2.SetActive(false);
-        if (panel3 != null) panel3.SetActive(false);
-        if (panel4 != null) panel4.SetActive(false);
-        if (panel5 != null) panel5.SetActive(false);
+        foreach (var step in steps)
+        {
+            if (step == null) continue;
+            HidePanel(step.panel);
+        }
     }
 
     private void ShowPanel(GameObject panel)
@@ -176,5 +125,108 @@ public class GuidePanel : MonoBehaviour
         {
             panel.SetActive(false);
         }
+    }
+
+    private void BuildLegacyStepsIfNeeded()
+    {
+        if (steps.Count > 0) return;
+        steps.Add(CreateStep(panel1, AdvanceMode.MovementKey, KeyCode.None));
+        steps.Add(CreateStep(panel2, AdvanceMode.MedalAdded, KeyCode.None));
+        steps.Add(CreateStep(null, AdvanceMode.MedalPanelHidden, KeyCode.None));
+        steps.Add(CreateStep(panel3, AdvanceMode.KeyDown, KeyCode.Tab));
+        steps.Add(CreateStep(null, AdvanceMode.KeyDown, KeyCode.Tab));
+        steps.Add(CreateStep(panel4, AdvanceMode.KeyDown, KeyCode.Escape));
+        steps.Add(CreateStep(null, AdvanceMode.KeyDown, KeyCode.Escape));
+        steps.Add(CreateStep(panel5, AdvanceMode.DelayComplete, KeyCode.None));
+    }
+
+    private GuideStep CreateStep(GameObject panel, AdvanceMode advanceMode, KeyCode keyCode)
+    {
+        return new GuideStep { panel = panel, advanceMode = advanceMode, keyCode = keyCode };
+    }
+
+    private GuideStep GetCurrentStep()
+    {
+        if (currentStepIndex < 0) return null;
+        if (currentStepIndex >= steps.Count) return null;
+        return steps[currentStepIndex];
+    }
+
+    private bool CanAdvanceByInput(GuideStep step)
+    {
+        if (step.advanceMode == AdvanceMode.MovementKey) return IsMovementKeyDown();
+        if (step.advanceMode == AdvanceMode.KeyDown) return Input.GetKeyDown(step.keyCode);
+        if (step.advanceMode == AdvanceMode.Sprint) return IsSprinting();
+        return false;
+    }
+
+    private bool IsMovementKeyDown()
+    {
+        return Input.GetKeyDown(KeyCode.W)
+            || Input.GetKeyDown(KeyCode.A)
+            || Input.GetKeyDown(KeyCode.S)
+            || Input.GetKeyDown(KeyCode.D);
+    }
+
+    private bool IsSprinting()
+    {
+        return Input.GetKey(KeyCode.LeftShift) && IsMovementKeyHeld();
+    }
+
+    private bool IsMovementKeyHeld()
+    {
+        return Input.GetKey(KeyCode.W)
+            || Input.GetKey(KeyCode.A)
+            || Input.GetKey(KeyCode.S)
+            || Input.GetKey(KeyCode.D);
+    }
+
+    private void OnMedalAdded()
+    {
+        AdvanceByMode(AdvanceMode.MedalAdded);
+    }
+
+    private void OnMedalPanelHidden()
+    {
+        AdvanceByMode(AdvanceMode.MedalPanelHidden);
+    }
+
+    private void AdvanceByMode(AdvanceMode advanceMode)
+    {
+        var step = GetCurrentStep();
+        if (step == null) return;
+        if (step.advanceMode != advanceMode) return;
+        AdvanceStep();
+    }
+
+    private void ShowStep(int stepIndex)
+    {
+        currentStepIndex = stepIndex;
+        if (currentStepIndex >= steps.Count)
+        {
+            CompleteGuide();
+            return;
+        }
+
+        var step = GetCurrentStep();
+        if (step == null)
+        {
+            ShowStep(currentStepIndex + 1);
+            return;
+        }
+
+        ShowPanel(step.panel);
+        if (step.advanceMode == AdvanceMode.DelayComplete)
+        {
+            Invoke(nameof(CompleteGuide), step.delaySeconds);
+        }
+    }
+
+    private void AdvanceStep()
+    {
+        var step = GetCurrentStep();
+        if (step == null) return;
+        HidePanel(step.panel);
+        ShowStep(currentStepIndex + 1);
     }
 }

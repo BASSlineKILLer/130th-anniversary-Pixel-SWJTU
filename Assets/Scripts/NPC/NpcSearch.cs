@@ -56,11 +56,12 @@ public class NpcSearch : MonoBehaviour
     /// </summary>
     private void AutoFindReferences()
     {
-        if (searchPanel != null && errorPanel != null && searchInput != null)
-            return;
-
         var canvas = GameObject.Find("SearchCanvas");
-        if (canvas == null) return;
+        if (canvas == null)
+        {
+            Debug.LogWarning("[NpcSearch] 未找到 SearchCanvas，无法自动绑定搜索 UI");
+            return;
+        }
 
         if (searchPanel == null)
             searchPanel = canvas.transform.Find("SearchPanel")?.gameObject;
@@ -74,6 +75,8 @@ public class NpcSearch : MonoBehaviour
         if (teleportListPanel == null)
         {
             teleportListPanel = canvas.GetComponentInChildren<SceneTeleportList>(true);
+            if (teleportListPanel == null)
+                Debug.LogWarning("[NpcSearch] 未在 SearchCanvas 下找到 SceneTeleportList / TeleportListPanel");
         }
     }
 
@@ -109,26 +112,30 @@ public class NpcSearch : MonoBehaviour
         {
             if (MedalManager.Instance != null)
             {
-                // 先检查较小阈值的传送功能是否解锁
                 if (!MedalManager.Instance.IsNodeUnlocked(teleportListNodeId))
                 {
                     MedalManager.Instance.ShowLockedHint(teleportListNodeId);
                     return;
                 }
-                
-                // 再检查较高阈值的搜索功能是否解锁
+
                 if (!MedalManager.Instance.IsNodeUnlocked(searchNodeId))
                 {
-                    MedalManager.Instance.ShowLockedHint(searchNodeId);
+                    OpenTeleportList();
                     return;
                 }
             }
 
-            searchPanel.SetActive(true);
-            searchInput.ActivateInputField();
-            isSearching = true;
-            GameManager.Instance?.SetDialogueLock(true);
+            OpenSearchPanel();
         }
+    }
+
+    private void OpenSearchPanel()
+    {
+        if (searchPanel != null) searchPanel.SetActive(true);
+        OpenTeleportList();
+        if (searchInput != null) searchInput.ActivateInputField();
+        isSearching = true;
+        GameManager.Instance?.SetDialogueLock(true);
     }
 
     /// <summary>
@@ -155,6 +162,8 @@ public class NpcSearch : MonoBehaviour
         if (teleportListPanel != null)
         {
             teleportListPanel.gameObject.SetActive(true);
+            isSearching = true;
+            GameManager.Instance?.SetDialogueLock(true);
         }
         else
         {
@@ -177,6 +186,14 @@ public class NpcSearch : MonoBehaviour
     {
         string name = inputText.Trim();
         if (string.IsNullOrEmpty(name)) return;
+
+        if (MedalManager.Instance != null && !MedalManager.Instance.IsNodeUnlocked(searchNodeId))
+        {
+            MedalManager.Instance.ShowLockedHint(searchNodeId);
+            searchInput.text = "";
+            searchInput.ActivateInputField();
+            return;
+        }
 
         // 1. 优先查本场景已生成的 NPC（无需跨场景传送）
         GameObject localNpc = FindNPCByName(name);
@@ -215,6 +232,7 @@ public class NpcSearch : MonoBehaviour
     {
         if (searchPanel != null) searchPanel.SetActive(false);
         if (errorPanel != null) errorPanel.SetActive(false);
+        if (teleportListPanel != null) teleportListPanel.gameObject.SetActive(false);
         isSearching = false;
         GameManager.Instance?.SetDialogueLock(false);
     }

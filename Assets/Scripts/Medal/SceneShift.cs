@@ -6,7 +6,6 @@ using UnityEngine;
 ///   - 已解锁 → <see cref="SceneTransitionManager.TransitionToScene"/> 传送
 ///   - 未解锁 → <see cref="MedalManager.ShowLockedHint"/> 弹提示
 /// </summary>
-[RequireComponent(typeof(Collider2D))]
 public class SceneShift : MonoBehaviour
 {
     [Tooltip("目标场景名（Build Settings 中的场景名）")]
@@ -22,6 +21,18 @@ public class SceneShift : MonoBehaviour
     public string playerTag = "Player";
 
     private bool triggered;
+
+    private void Awake()
+    {
+        var col = GetComponent<Collider2D>();
+        if (col == null)
+        {
+            Debug.LogWarning($"[SceneShift] {name} 缺少 Collider2D，无法作为传送触发器");
+            enabled = false;
+            return;
+        }
+        col.isTrigger = true;
+    }
 
     private void Reset()
     {

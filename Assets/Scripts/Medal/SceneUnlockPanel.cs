@@ -30,6 +30,13 @@ public class SceneUnlockPanel : MonoBehaviour
     /// <param name="message">要显示的消息</param>
     public void Show(string message)
     {
+        if (canvasGroup != null)
+        {
+            canvasGroup.alpha = 0f;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+        }
+
         // 1. 必须先激活对象，否则协程无法启动
         gameObject.SetActive(true);
         transform.SetAsLastSibling(); // 确保在最上层

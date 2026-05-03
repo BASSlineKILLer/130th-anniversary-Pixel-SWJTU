@@ -136,6 +136,7 @@ namespace SWJTUGame.UI
 
             // 恢复勋章进度到 MedalManager
             SaveManager.Instance.RestoreMedalData(data);
+            GuidePanel.SkipGuideForContinueGame();
 
             // 重置 GameManager 状态（清除上一局可能残留的暂停/锁定）
             if (GameManager.Instance != null)
@@ -205,6 +206,7 @@ namespace SWJTUGame.UI
             // 清除存档文件
             if (SaveManager.Instance != null)
                 SaveManager.Instance.DeleteSave();
+            GuidePanel.ResetGuideForNewGame();
 
             // 重置所有持久化单例的内存状态，确保真正的新游戏
             if (GameManager.Instance != null)

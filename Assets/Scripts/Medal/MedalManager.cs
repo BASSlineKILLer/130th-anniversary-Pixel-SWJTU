@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic; // Add this for HashSet
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 public class MedalManager : MonoBehaviour
 {
@@ -70,21 +71,33 @@ public class MedalManager : MonoBehaviour
             medalPanelComponent.onPanelHidden.AddListener(MedalPanelHidden);
         }
         
-        // 尝试自动寻找场景中的 SceneUnlockPanel
-        if (sceneUnlockPanel == null)
-        {
-            sceneUnlockPanel = FindObjectOfType<SceneUnlockPanel>(true);
-            if (sceneUnlockPanel != null)
-            {
-                Debug.Log("[MedalManager] 自动找到并绑定了 SceneUnlockPanel");
-            }
-            else 
-            {
-                Debug.LogWarning("[MedalManager] 未能自动找到 SceneUnlockPanel，请确保场景中存在挂载该脚本的面板");
-            }
-        }
+        BindSceneUnlockPanel();
         
         SyncReachedThresholds(); // 启动时将已达阈值全部标记为“已触发过”，避免重启/读档后重播弹窗
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        BindSceneUnlockPanel();
+    }
+
+    private void BindSceneUnlockPanel()
+    {
+        sceneUnlockPanel = FindObjectOfType<SceneUnlockPanel>(true);
+        if (sceneUnlockPanel == null)
+        {
+            Debug.Log("[MedalManager] 当前场景未找到 SceneUnlockPanel；需要显示解锁提示时会再次查找");
+        }
     }
 
     private void Update()

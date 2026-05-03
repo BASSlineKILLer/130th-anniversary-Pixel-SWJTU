@@ -11,6 +11,8 @@ public class SceneTeleportList : MonoBehaviour
 
     private void OnEnable()
     {
+        AutoBindReferences();
+
         if (config == null)
         {
             Debug.LogError("[SceneTeleportList] 未配置 SceneTeleportListConfig 资产！");
@@ -33,6 +35,7 @@ public class SceneTeleportList : MonoBehaviour
         {
             foreach (var entry in config.entries)
             {
+                if (entry == null || string.IsNullOrEmpty(entry.sceneName)) continue;
                 Button btn = Instantiate(itemPrefab, itemParent);
                 
                 // 更新图标（如果有）
@@ -79,6 +82,17 @@ public class SceneTeleportList : MonoBehaviour
                 // 绑定点击事件
                 btn.onClick.AddListener(() => Teleport(entry));
             }
+        }
+        Debug.Log($"[SceneTeleportList] 已生成传送列表：{itemParent.childCount} 项");
+    }
+
+    private void AutoBindReferences()
+    {
+        if (panel == null) panel = gameObject;
+        if (itemParent == null)
+        {
+            var content = transform.Find("Content");
+            itemParent = content != null ? content : transform;
         }
     }
 

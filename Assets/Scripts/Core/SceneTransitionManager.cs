@@ -68,7 +68,7 @@ public class SceneTransitionManager : MonoBehaviour
             yield return CircleWipeTransition.Instance.PlayClose();
 
         // 在离开场景前，记录主角当前的朝向（localScale.x）
-        var player = FindPlayer();
+        var player = FindPlayer(false);
         if (player != null)
         {
             pendingPlayerScaleX = player.localScale.x;
@@ -129,7 +129,7 @@ public class SceneTransitionManager : MonoBehaviour
         if (CircleWipeTransition.Instance != null)
             yield return CircleWipeTransition.Instance.PlayClose();
 
-        var player = FindPlayer();
+        var player = FindPlayer(false);
         if (player != null)
             pendingPlayerScaleX = player.localScale.x;
 
@@ -175,7 +175,7 @@ public class SceneTransitionManager : MonoBehaviour
             pendingSaveData = null;
             GrantTeleportImmunity();
 
-            var player = FindPlayer();
+            var player = FindPlayer(false);
             if (player != null)
                 SnapCamera(player);
         }
@@ -203,7 +203,7 @@ public class SceneTransitionManager : MonoBehaviour
         }
 
         // 强制对齐相机到玩家，防止 Cinemachine damping 导致偏移
-        var player = FindPlayer();
+        var player = FindPlayer(false);
         if (player != null)
             SnapCamera(player);
 
@@ -294,12 +294,13 @@ public class SceneTransitionManager : MonoBehaviour
             vcam.PreviousStateIsValid = false;
     }
 
-    private Transform FindPlayer()
+    private Transform FindPlayer(bool logWarning = true)
     {
         var player = GameObject.FindGameObjectWithTag(playerTag);
         if (player == null)
         {
-            Debug.LogWarning("[SceneTransition] 未找到 Player（请确认 Player 的 Tag 设置为 'Player'）");
+            if (logWarning)
+                Debug.LogWarning("[SceneTransition] 未找到 Player（请确认 Player 的 Tag 设置为 'Player'）");
             return null;
         }
         return player.transform;

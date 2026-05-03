@@ -19,6 +19,8 @@ namespace Player
         private bool isSprinting;
         private SpriteRenderer spriteRenderer;
         private Animator playerAnim;
+        private bool hasIsMovingParameter;
+        private bool hasIsRunningParameter;
 
         /// <summary>当前移动输入向量（供外部只读访问，如 FootstepAudioPlayer）</summary>
         public Vector2 MoveInput => moveInput;
@@ -31,6 +33,7 @@ namespace Player
             rb = GetComponent<Rigidbody2D>();
             spriteRenderer = GetComponent<SpriteRenderer>();
             playerAnim = GetComponent<Animator>();
+            CacheAnimatorParameters();
 
             // 安全检查：确保 Rigidbody2D 配置适合 Top-down 游戏
             if (rb != null)
@@ -86,8 +89,10 @@ namespace Player
             
             if (playerAnim != null)
             {
-                playerAnim.SetBool("IsMoving", isMoving);
-                playerAnim.SetBool("IsRunning", isMoving && isSprinting);
+                if (hasIsMovingParameter)
+                    playerAnim.SetBool("IsMoving", isMoving);
+                if (hasIsRunningParameter)
+                    playerAnim.SetBool("IsRunning", isMoving && isSprinting);
             }
 
             // 处理翻转：只有在水平移动时才改变缩放
@@ -97,6 +102,17 @@ namespace Player
                 // 或者根据你的素材朝向调整：1 : -1
                 float direction = moveInput.x > 0 ? -1f : 1f;
                 transform.localScale = new Vector3(direction, transform.localScale.y, transform.localScale.z);
+            }
+        }
+
+        private void CacheAnimatorParameters()
+        {
+            if (playerAnim == null) return;
+            foreach (var parameter in playerAnim.parameters)
+            {
+                if (parameter.type != AnimatorControllerParameterType.Bool) continue;
+                if (parameter.name == "IsMoving") hasIsMovingParameter = true;
+                if (parameter.name == "IsRunning") hasIsRunningParameter = true;
             }
         }
         

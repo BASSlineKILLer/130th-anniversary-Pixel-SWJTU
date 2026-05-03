@@ -25,3 +25,7 @@ MonoBehaviour:
     displayName: "\u706B\u8F66\u5E7F\u573A"
     icon: {fileID: -1563047777, guid: f25fe4ec710b9ca44b3450adaf8e7748, type: 3}
     spawnPointId: 10
+  - sceneName: 2-6
+    displayName: "\u8F66\u7AD9"
+    icon: {fileID: -1762453598, guid: f25fe4ec710b9ca44b3450adaf8e7748, type: 3}
+    spawnPointId: 10
