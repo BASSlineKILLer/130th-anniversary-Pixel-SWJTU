@@ -1,10 +1,14 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class NpcSearch : MonoBehaviour
 {
+    private const int MAX_CANDIDATES = 10;
+
     [Header("UI 组件")]
     [Tooltip("检索输入框")]
     public TMP_InputField searchInput;
@@ -17,6 +21,13 @@ public class NpcSearch : MonoBehaviour
 
     [Tooltip("错误文本")]
     public TextMeshProUGUI errorText;
+
+    [Header("候选卡片列表")]
+    [Tooltip("候选卡片容器（建议挂在搜索面板右侧的 Content 上）")]
+    public Transform candidateContainer;
+
+    [Tooltip("NPC 卡片预制体；需包含 PortraitImage(Image) 和 NameText(TMP) 两个子物体；自身为 Button")]
+    public GameObject npcCardPrefab;
 
     [Header("场景传送列表（可选）")]
     [Tooltip("场景传送面板；由独立的 SceneTeleportList 脚本管理。打开入口由 OpenTeleportList 提供")]
@@ -32,6 +43,7 @@ public class NpcSearch : MonoBehaviour
     private bool isInRange = false;
     private bool isSearching = false;
     private Transform playerTransform;
+    private readonly List<GameObject> candidateCardInstances = new List<GameObject>();
 
     void Start()
     {
@@ -48,14 +60,34 @@ public class NpcSearch : MonoBehaviour
         if (teleportListPanel != null) teleportListPanel.gameObject.SetActive(false);
 
         if (searchInput != null)
+        {
             searchInput.onEndEdit.AddListener(OnSearch);
+            searchInput.onValueChanged.AddListener(OnSearchInputChanged);
+        }
+
+        ClearCandidateCards();
     }
 
     /// <summary>
-    /// 引用为空时自动从 SearchCanvas 中查找子面板
+    /// 引用为空时自动从 SearchCanvas 中查找子面板。
+    /// 优先读取 SearchCanvasRefs 聚合脚本（最可靠），找不到再降级到名字查找。
     /// </summary>
     private void AutoFindReferences()
     {
+        var refs = FindObjectOfType<SearchCanvasRefs>(true);
+        if (refs != null)
+        {
+            if (searchPanel == null) searchPanel = refs.searchPanel;
+            if (searchInput == null) searchInput = refs.searchInput;
+            if (errorPanel == null) errorPanel = refs.errorPanel;
+            if (errorText == null) errorText = refs.errorText;
+            if (candidateContainer == null) candidateContainer = refs.candidateContainer;
+            if (teleportListPanel == null) teleportListPanel = refs.teleportListPanel;
+
+            if (candidateContainer != null)
+                Debug.Log($"[NpcSearch] 从 SearchCanvasRefs 获取 CandidateContainer: {GetFullPath(candidateContainer)}");
+        }
+
         var canvas = GameObject.Find("SearchCanvas");
         if (canvas == null)
         {
@@ -78,6 +110,44 @@ public class NpcSearch : MonoBehaviour
             if (teleportListPanel == null)
                 Debug.LogWarning("[NpcSearch] 未在 SearchCanvas 下找到 SceneTeleportList / TeleportListPanel");
         }
+
+        if (candidateContainer == null)
+        {
+            candidateContainer = FindDescendantByNamePrefix(canvas.transform, "CandidateContainer");
+            if (candidateContainer == null)
+                Debug.LogWarning("[NpcSearch] 未在 SearchCanvas 下找到 CandidateContainer，候选卡片无法显示");
+            else
+                Debug.Log($"[NpcSearch] 自动绑定 CandidateContainer: {GetFullPath(candidateContainer)}");
+        }
+    }
+
+    private static string GetFullPath(Transform t)
+    {
+        if (t == null) return "(null)";
+        var path = t.name;
+        var p = t.parent;
+        while (p != null)
+        {
+            path = p.name + "/" + path;
+            p = p.parent;
+        }
+        return path;
+    }
+
+    /// <summary>
+    /// 递归在子树中查找名字以 prefix 开头的 Transform（宽松匹配，容忍尾部空格）。
+    /// </summary>
+    private static Transform FindDescendantByNamePrefix(Transform root, string prefix)
+    {
+        if (root == null || string.IsNullOrEmpty(prefix)) return null;
+        foreach (Transform child in root)
+        {
+            if (child.name.Trim().StartsWith(prefix, StringComparison.Ordinal))
+                return child;
+            var nested = FindDescendantByNamePrefix(child, prefix);
+            if (nested != null) return nested;
+        }
+        return null;
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -133,7 +203,12 @@ public class NpcSearch : MonoBehaviour
     {
         if (searchPanel != null) searchPanel.SetActive(true);
         OpenTeleportList();
-        if (searchInput != null) searchInput.ActivateInputField();
+        if (searchInput != null)
+        {
+            searchInput.text = string.Empty;
+            searchInput.ActivateInputField();
+        }
+        ClearCandidateCards();
         isSearching = true;
         GameManager.Instance?.SetDialogueLock(true);
     }
@@ -195,37 +270,161 @@ public class NpcSearch : MonoBehaviour
             return;
         }
 
-        // 1. 优先查本场景已生成的 NPC（无需跨场景传送）
-        GameObject localNpc = FindNPCByName(name);
+        var firstMatch = FindFirstFuzzyMatch(name);
+        if (firstMatch.Key != null)
+        {
+            TeleportToNPC(firstMatch.Key, firstMatch.Value);
+            return;
+        }
+
+        ShowHint($"未找到 NPC: {name}");
+        searchInput.text = "";
+        searchInput.ActivateInputField();
+    }
+
+    private void OnSearchInputChanged(string inputText)
+    {
+        if (!isSearching) return;
+        if (MedalManager.Instance != null && !MedalManager.Instance.IsNodeUnlocked(searchNodeId)) return;
+        RefreshCandidateCards(inputText);
+    }
+
+    private void RefreshCandidateCards(string query)
+    {
+        ClearCandidateCards();
+        if (candidateContainer == null || npcCardPrefab == null) return;
+
+        string trimmed = query == null ? string.Empty : query.Trim();
+        if (trimmed.Length == 0) return;
+
+        var matches = CollectFuzzyMatches(trimmed, MAX_CANDIDATES);
+        foreach (var pair in matches)
+        {
+            CreateCandidateCard(pair.Key, pair.Value);
+        }
+    }
+
+    private List<KeyValuePair<NPCInfo, string>> CollectFuzzyMatches(string query, int maxCount)
+    {
+        var results = new List<KeyValuePair<NPCInfo, string>>();
+        if (NPCDistributor.Instance == null) return results;
+
+        var seenIds = new HashSet<int>();
+        foreach (var pair in NPCDistributor.Instance.GetAllAssignedNPCs())
+        {
+            var npc = pair.Key;
+            if (npc == null || string.IsNullOrEmpty(npc.Username)) continue;
+            if (!IsFuzzyMatch(npc.Username, query)) continue;
+            if (!seenIds.Add(npc.Id)) continue;
+
+            results.Add(pair);
+            if (results.Count >= maxCount) break;
+        }
+        return results;
+    }
+
+    private KeyValuePair<NPCInfo, string> FindFirstFuzzyMatch(string query)
+    {
+        var matches = CollectFuzzyMatches(query, 1);
+        return matches.Count > 0 ? matches[0] : default;
+    }
+
+    private static bool IsFuzzyMatch(string source, string query)
+    {
+        return source.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
+    private void CreateCandidateCard(NPCInfo npc, string sceneName)
+    {
+        var card = Instantiate(npcCardPrefab, candidateContainer);
+        candidateCardInstances.Add(card);
+
+        var portrait = FindCardPortrait(card.transform);
+        if (portrait != null && npc.Sprite != null)
+        {
+            portrait.sprite = npc.Sprite;
+            portrait.preserveAspect = true;
+        }
+
+        var nameText = FindCardNameText(card.transform);
+        if (nameText != null) nameText.text = npc.Username;
+
+        var btn = card.GetComponent<Button>();
+        if (btn != null)
+        {
+            var captured = npc;
+            var capturedScene = sceneName;
+            btn.onClick.AddListener(() => TeleportToNPC(captured, capturedScene));
+        }
+    }
+
+    /// <summary>
+    /// 找卡片头像：优先按名称前缀“Portrait”，其次取第一个非根节点的 Image。
+    /// </summary>
+    private static Image FindCardPortrait(Transform card)
+    {
+        var byName = FindDescendantByNamePrefix(card, "Portrait");
+        if (byName != null)
+        {
+            var img = byName.GetComponent<Image>();
+            if (img != null) return img;
+        }
+        foreach (var img in card.GetComponentsInChildren<Image>(true))
+        {
+            if (img.transform != card) return img;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 找卡片名字：优先按名称前缀“Name”，其次取第一个 TMP。
+    /// </summary>
+    private static TextMeshProUGUI FindCardNameText(Transform card)
+    {
+        var byName = FindDescendantByNamePrefix(card, "Name");
+        if (byName != null)
+        {
+            var tmp = byName.GetComponent<TextMeshProUGUI>();
+            if (tmp != null) return tmp;
+        }
+        return card.GetComponentInChildren<TextMeshProUGUI>(true);
+    }
+
+    private void ClearCandidateCards()
+    {
+        foreach (var card in candidateCardInstances)
+        {
+            if (card != null) Destroy(card);
+        }
+        candidateCardInstances.Clear();
+    }
+
+    private void TeleportToNPC(NPCInfo npc, string targetScene)
+    {
+        if (npc == null) return;
+
+        var localNpc = FindNPCByName(npc.Username);
         if (localNpc != null)
         {
             if (SceneTransitionManager.Instance != null)
                 SceneTransitionManager.Instance.TeleportPlayer(localNpc.transform.position);
-            else
+            else if (playerTransform != null)
                 playerTransform.position = localNpc.transform.position;
 
-            Debug.Log($"[NpcSearch] 同场景传送到 NPC: {name}");
+            Debug.Log($"[NpcSearch] 同场景传送到 NPC: {npc.Username}");
             ClosePanel();
             return;
         }
 
-        // 2. 本场景没有 → 查全局分配，跨场景传送
-        if (NPCDistributor.Instance != null)
+        if (!string.IsNullOrEmpty(targetScene) && SceneTransitionManager.Instance != null)
         {
-            string targetScene = NPCDistributor.Instance.FindNPCSceneByName(name);
-            if (!string.IsNullOrEmpty(targetScene) && SceneTransitionManager.Instance != null)
-            {
-                ClosePanel();
-                SceneTransitionManager.Instance.TransitionToSceneAndFindNPC(targetScene, name);
-                Debug.Log($"[NpcSearch] 跨场景传送到 '{targetScene}' 的 NPC: {name}");
-                return;
-            }
+            ClosePanel();
+            SceneTransitionManager.Instance.TransitionToSceneAndFindNPC(targetScene, npc.Username);
+            Debug.Log($"[NpcSearch] 跨场景传送到 '{targetScene}' 的 NPC: {npc.Username}");
+            return;
         }
 
-        // 3. 全局也没有 → 提示未找到
-        ShowHint($"未找到 NPC: {name}");
-        searchInput.text = "";
-        searchInput.ActivateInputField();
+        ShowHint($"无法定位 NPC: {npc.Username}");
     }
 
     private void ClosePanel()
@@ -233,6 +432,7 @@ public class NpcSearch : MonoBehaviour
         if (searchPanel != null) searchPanel.SetActive(false);
         if (errorPanel != null) errorPanel.SetActive(false);
         if (teleportListPanel != null) teleportListPanel.gameObject.SetActive(false);
+        ClearCandidateCards();
         isSearching = false;
         GameManager.Instance?.SetDialogueLock(false);
     }

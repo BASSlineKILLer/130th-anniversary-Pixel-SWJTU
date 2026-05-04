@@ -14613,8 +14613,8 @@ Transform:
   m_GameObject: {fileID: 268146934}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 100.23, y: 29.27, z: 0}
-  m_LocalScale: {x: 0.6875, y: 5.6084676, z: 1}
+  m_LocalPosition: {x: 100.4, y: 29.27, z: 0}
+  m_LocalScale: {x: 0.45833564, y: 5.6084676, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1489181406}
@@ -20844,8 +20844,8 @@ Transform:
   m_GameObject: {fileID: 492259622}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 71.68, y: 40.47, z: 0}
-  m_LocalScale: {x: 3.6307385, y: 0.9425996, z: 1}
+  m_LocalPosition: {x: 71.68, y: 40.64, z: 0}
+  m_LocalScale: {x: 3.696163, y: 0.31015092, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1489181406}
@@ -21298,6 +21298,7 @@ MonoBehaviour:
   deadZoneHeight: 0.05
   boundsCollider: {fileID: 873768267}
   confinerDamping: 0.1
+  enablePixelPerfect: 1
 --- !u!114 &519420035
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21580,8 +21581,8 @@ Transform:
   m_GameObject: {fileID: 524403618}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 52.12, y: 29.08, z: 0}
-  m_LocalScale: {x: 0.6875, y: 3.490034, z: 1}
+  m_LocalPosition: {x: 51.92, y: 28.99, z: 0}
+  m_LocalScale: {x: 0.33716273, y: 3.1992097, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1489181406}
@@ -44416,6 +44417,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2803383627041468139, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 4547011080275546241, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
       propertyPath: m_AnchorMax.x
       value: 0
@@ -45171,10 +45176,11 @@ MonoBehaviour:
   searchPanel: {fileID: 0}
   errorPanel: {fileID: 0}
   errorText: {fileID: 0}
-  requiredMedalCount: 5
-  medalLockedHint: "\u9700\u8981\u6536\u96C6 {0} \u679A\u52CB\u7AE0\u624D\u80FD\u89E3\u9501\u641C\u7D22\u529F\u80FD"
-  storyLockedHint: "\u5B8C\u6210\u5173\u952E\u5267\u60C5\u540E\u624D\u80FD\u89E3\u9501\u641C\u7D22\u529F\u80FD"
-  debugBypassLock: 0
+  candidateContainer: {fileID: 0}
+  npcCardPrefab: {fileID: 0}
+  teleportListPanel: {fileID: 0}
+  searchNodeId: NpcSearch
+  teleportListNodeId: TeleportList
 --- !u!61 &901333081
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -101542,9 +101548,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 548ee0f281e4dfa438624692a842402a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sceneUnlockPanel: {fileID: 0}
-  libraryPortal: {fileID: 0}
-  requiredMedalCount: 3
+  targetSceneName: Library
+  targetSpawnPointId: 
+  nodeId: Library
+  playerTag: Player
 --- !u!4 &2140189910
 Transform:
   m_ObjectHideFlags: 0

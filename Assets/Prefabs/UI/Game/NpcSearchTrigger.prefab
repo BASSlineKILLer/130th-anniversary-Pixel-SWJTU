@@ -26,7 +26,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1016019003293824876}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -10.951599, y: 0.6879654, z: 2.3340325}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -94,6 +94,8 @@ MonoBehaviour:
   searchPanel: {fileID: 0}
   errorPanel: {fileID: 0}
   errorText: {fileID: 0}
+  candidateContainer: {fileID: 0}
+  npcCardPrefab: {fileID: 5283543223560768500, guid: 30e8bfa2f80e5c94983e32eba6cfd1b0, type: 3}
   teleportListPanel: {fileID: 0}
   searchNodeId: NpcSearch
   teleportListNodeId: TeleportList

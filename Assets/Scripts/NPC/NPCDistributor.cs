@@ -258,6 +258,16 @@ public class NPCDistributor : MonoBehaviour
     }
 
     /// <summary>
+    /// 遍历所有已分配的 NPC（含其所在场景名），供搜索/索引功能使用。
+    /// </summary>
+    public IEnumerable<KeyValuePair<NPCInfo, string>> GetAllAssignedNPCs()
+    {
+        foreach (var kvp in sceneAssignment)
+            foreach (var npc in kvp.Value)
+                yield return new KeyValuePair<NPCInfo, string>(npc, kvp.Key);
+    }
+
+    /// <summary>
     /// 重置（新游戏时由 MainMenuManager 调用）
     /// </summary>
     public void ResetForNewGame()
