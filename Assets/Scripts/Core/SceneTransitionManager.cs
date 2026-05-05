@@ -11,6 +11,10 @@ public class SceneTransitionManager : MonoBehaviour
 {
     public static SceneTransitionManager Instance { get; private set; }
 
+    private const float ASYNC_READY_PROGRESS = 0.9f;
+    private const float ASYNC_COMPLETE_PROGRESS = 1f;
+    private const string LOADING_SCENE_MESSAGE = "Loading...";
+
     [Header("玩家配置")]
     [Tooltip("Player 的 Tag，用于场景加载后查找玩家")]
     [SerializeField] private string playerTag = "Player";
@@ -78,7 +82,7 @@ public class SceneTransitionManager : MonoBehaviour
         pendingSaveData = null; // 正常跨场景传送不使用存档数据
         shouldPlayOpenOnLoad = true;
         GrantTeleportImmunity();
-        SceneManager.LoadScene(sceneName);
+        yield return LoadSceneAsync(sceneName);
     }
 
     /// <summary>
@@ -138,7 +142,7 @@ public class SceneTransitionManager : MonoBehaviour
         pendingNPCUsername = npcUsername;
         shouldPlayOpenOnLoad = true;
         GrantTeleportImmunity();
-        SceneManager.LoadScene(sceneName);
+        yield return LoadSceneAsync(sceneName);
     }
 
     /// <summary>
@@ -161,7 +165,26 @@ public class SceneTransitionManager : MonoBehaviour
         pendingSpawnPointId = data.checkpointId;
         pendingSaveData = data; // 记录整个 SaveData 供稍后定位使用
         shouldPlayOpenOnLoad = true;
-        SceneManager.LoadScene(data.sceneName);
+        yield return LoadSceneAsync(data.sceneName);
+    }
+
+    private IEnumerator LoadSceneAsync(string sceneName)
+    {
+        SceneLoadingOverlay.Show(LOADING_SCENE_MESSAGE);
+        var operation = SceneManager.LoadSceneAsync(sceneName);
+        if (operation == null)
+        {
+            SceneLoadingOverlay.Hide();
+            yield break;
+        }
+
+        while (!operation.isDone)
+        {
+            SceneLoadingOverlay.SetProgress(operation.progress / ASYNC_READY_PROGRESS);
+            yield return null;
+        }
+
+        SceneLoadingOverlay.SetProgress(ASYNC_COMPLETE_PROGRESS);
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -208,6 +231,8 @@ public class SceneTransitionManager : MonoBehaviour
             SnapCamera(player);
 
         yield return null;
+
+        SceneLoadingOverlay.Hide();
 
         if (CircleWipeTransition.Instance != null)
             yield return CircleWipeTransition.Instance.PlayOpen();

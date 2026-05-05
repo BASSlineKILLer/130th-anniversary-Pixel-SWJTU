@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using TMPro;
 
@@ -61,7 +62,6 @@ public class NpcSearch : MonoBehaviour
 
         if (searchInput != null)
         {
-            searchInput.onEndEdit.AddListener(OnSearch);
             searchInput.onValueChanged.AddListener(OnSearchInputChanged);
         }
 
@@ -175,6 +175,7 @@ public class NpcSearch : MonoBehaviour
     {
         if (isSearching && Input.GetKeyDown(KeyCode.Space))
         {
+            if (searchInput != null && searchInput.isFocused) return;
             // 如果正在搜索，按 Space 关闭面板
             ClosePanel();
         }
@@ -203,13 +204,13 @@ public class NpcSearch : MonoBehaviour
     {
         if (searchPanel != null) searchPanel.SetActive(true);
         OpenTeleportList();
+        isSearching = true;
         if (searchInput != null)
         {
             searchInput.text = string.Empty;
             searchInput.ActivateInputField();
         }
         ClearCandidateCards();
-        isSearching = true;
         GameManager.Instance?.SetDialogueLock(true);
     }
 
@@ -257,31 +258,6 @@ public class NpcSearch : MonoBehaviour
         StartCoroutine(HideErrorPanelAfterDelay(1.2f));
     }
 
-    public void OnSearch(string inputText)
-    {
-        string name = inputText.Trim();
-        if (string.IsNullOrEmpty(name)) return;
-
-        if (MedalManager.Instance != null && !MedalManager.Instance.IsNodeUnlocked(searchNodeId))
-        {
-            MedalManager.Instance.ShowLockedHint(searchNodeId);
-            searchInput.text = "";
-            searchInput.ActivateInputField();
-            return;
-        }
-
-        var firstMatch = FindFirstFuzzyMatch(name);
-        if (firstMatch.Key != null)
-        {
-            TeleportToNPC(firstMatch.Key, firstMatch.Value);
-            return;
-        }
-
-        ShowHint($"未找到 NPC: {name}");
-        searchInput.text = "";
-        searchInput.ActivateInputField();
-    }
-
     private void OnSearchInputChanged(string inputText)
     {
         if (!isSearching) return;
@@ -307,26 +283,52 @@ public class NpcSearch : MonoBehaviour
     private List<KeyValuePair<NPCInfo, string>> CollectFuzzyMatches(string query, int maxCount)
     {
         var results = new List<KeyValuePair<NPCInfo, string>>();
-        if (NPCDistributor.Instance == null) return results;
+        var seenKeys = new HashSet<string>();
 
-        var seenIds = new HashSet<int>();
+        CollectAssignedMatches(query, maxCount, results, seenKeys);
+        if (results.Count < maxCount)
+            CollectSceneMatches(query, maxCount, results, seenKeys);
+        return results;
+    }
+
+    private void CollectAssignedMatches(string query, int maxCount, List<KeyValuePair<NPCInfo, string>> results, HashSet<string> seenKeys)
+    {
+        if (NPCDistributor.Instance == null || !NPCDistributor.Instance.IsReady) return;
+
         foreach (var pair in NPCDistributor.Instance.GetAllAssignedNPCs())
         {
             var npc = pair.Key;
-            if (npc == null || string.IsNullOrEmpty(npc.Username)) continue;
-            if (!IsFuzzyMatch(npc.Username, query)) continue;
-            if (!seenIds.Add(npc.Id)) continue;
+            if (!CanAddMatch(npc, query, seenKeys)) continue;
 
             results.Add(pair);
             if (results.Count >= maxCount) break;
         }
-        return results;
     }
 
-    private KeyValuePair<NPCInfo, string> FindFirstFuzzyMatch(string query)
+    private void CollectSceneMatches(string query, int maxCount, List<KeyValuePair<NPCInfo, string>> results, HashSet<string> seenKeys)
     {
-        var matches = CollectFuzzyMatches(query, 1);
-        return matches.Count > 0 ? matches[0] : default;
+        string sceneName = SceneManager.GetActiveScene().name;
+        foreach (var controller in FindObjectsOfType<NPCController>())
+        {
+            var npc = controller.Info;
+            if (!CanAddMatch(npc, query, seenKeys)) continue;
+
+            results.Add(new KeyValuePair<NPCInfo, string>(npc, sceneName));
+            if (results.Count >= maxCount) break;
+        }
+    }
+
+    private static bool CanAddMatch(NPCInfo npc, string query, HashSet<string> seenKeys)
+    {
+        if (npc == null || string.IsNullOrEmpty(npc.Username)) return false;
+        if (!IsFuzzyMatch(npc.Username, query)) return false;
+        return seenKeys.Add(GetNpcMatchKey(npc));
+    }
+
+    private static string GetNpcMatchKey(NPCInfo npc)
+    {
+        if (npc.Id != 0) return npc.Id.ToString();
+        return npc.Username;
     }
 
     private static bool IsFuzzyMatch(string source, string query)

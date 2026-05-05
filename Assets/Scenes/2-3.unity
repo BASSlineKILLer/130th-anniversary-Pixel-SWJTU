@@ -45177,7 +45177,7 @@ MonoBehaviour:
   errorPanel: {fileID: 0}
   errorText: {fileID: 0}
   candidateContainer: {fileID: 0}
-  npcCardPrefab: {fileID: 0}
+  npcCardPrefab: {fileID: 5283543223560768500, guid: 30e8bfa2f80e5c94983e32eba6cfd1b0, type: 3}
   teleportListPanel: {fileID: 0}
   searchNodeId: NpcSearch
   teleportListNodeId: TeleportList
