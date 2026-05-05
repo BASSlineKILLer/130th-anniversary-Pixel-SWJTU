@@ -18,7 +18,7 @@ public class StoryArchiveTrigger : MonoBehaviour
         if (archivePanel != null)
         {
             archivePanel.onPanelHidden.AddListener(OnPanelClosed);
-            archivePanel.gameObject.SetActive(false);
+            archivePanel.HideCanvasOnly();
         }
         if (hintUI != null)
             hintUI.SetActive(false);
@@ -32,9 +32,11 @@ public class StoryArchiveTrigger : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        Debug.Log($"[StoryArchiveTrigger] Enter: {other.name}, tag={other.tag}");
         if (other.CompareTag("Player"))
         {
             playerInTrigger = true;
+            Debug.Log("[StoryArchiveTrigger] playerInTrigger=true");
             if (hintUI != null && !panelOpen)
                 hintUI.SetActive(true);
         }
@@ -56,6 +58,7 @@ public class StoryArchiveTrigger : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            Debug.Log($"[StoryArchiveTrigger] Space pressed, panelOpen={panelOpen}, archivePanel={(archivePanel != null)}");
             if (!panelOpen)
                 OpenArchive();
             else
@@ -65,8 +68,14 @@ public class StoryArchiveTrigger : MonoBehaviour
 
     private void OpenArchive()
     {
-        if (archivePanel == null) return;
+        if (archivePanel == null)
+        {
+            Debug.LogError("[StoryArchiveTrigger] archivePanel 未引用，无法打开");
+            return;
+        }
 
+        Debug.Log("[StoryArchiveTrigger] OpenArchive -> Show()");
+        archivePanel.gameObject.SetActive(true);
         LockMovement();
         archivePanel.Show();
         panelOpen = true;

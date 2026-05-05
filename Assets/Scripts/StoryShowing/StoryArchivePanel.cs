@@ -23,6 +23,8 @@ public class StoryArchivePanel : MonoBehaviour
     private List<SpecialNPCData.Entry> entries;
     private int currentIndex = 0;
     private bool isVisible = false;
+    private Transform innerPanel; // ShowStoryPanel 子物体，真正承载内容
+    private int shownFrame = -1; // 记录 Show() 的帧号，当帧不响应关闭输入
 
     private static readonly Color LOCKED_COLOR = new Color(0.35f, 0.35f, 0.35f, 1f);
     private const string LOCKED_STORY = "???";
@@ -35,6 +37,9 @@ public class StoryArchivePanel : MonoBehaviour
     private void AutoBindUI()
     {
         Transform root = canvasRoot != null ? canvasRoot.transform : transform;
+
+        if (innerPanel == null)
+            innerPanel = root.Find("ShowStoryPanel");
 
         if (portraitImage == null)
         {
@@ -51,6 +56,8 @@ public class StoryArchivePanel : MonoBehaviour
     private void Update()
     {
         if (!isVisible) return;
+        // 避免与 StoryArchiveTrigger 同帧抢 Space 输入导致立即关闭
+        if (Time.frameCount == shownFrame) return;
 
         if (Input.GetKeyDown(KeyCode.A))
             PrevPage();
@@ -62,6 +69,8 @@ public class StoryArchivePanel : MonoBehaviour
 
     public void Show()
     {
+        AutoBindUI();
+
         if (data == null || data.entries == null || data.entries.Count == 0)
         {
             Debug.LogWarning("[StoryArchivePanel] SpecialNPCData 为空");
@@ -71,22 +80,64 @@ public class StoryArchivePanel : MonoBehaviour
         entries = data.entries;
         currentIndex = 0;
         isVisible = true;
+        shownFrame = Time.frameCount;
 
         if (canvasRoot != null)
         {
             canvasRoot.SetActive(true);
+            FixCanvasRootTransform();
             canvasRoot.transform.SetAsLastSibling();
         }
+
+        if (innerPanel != null)
+            innerPanel.gameObject.SetActive(true);
+        else if (canvasRoot == null)
+            gameObject.SetActive(true);
 
         RenderCurrent();
     }
 
-    public void Hide()
+    /// <summary>
+    /// 修正 ShowStoryCanvas prefab 上 RectTransform 的异常配置：
+    /// prefab 中 m_LocalScale = (0,0,0) 会导致整张 UI 不可见；
+    /// SizeDelta/Anchors 也可能被设为 0，这里强制还原为占满屏幕。
+    /// </summary>
+    private void FixCanvasRootTransform()
     {
+        if (canvasRoot == null) return;
+        var rt = canvasRoot.GetComponent<RectTransform>();
+        if (rt == null) return;
+
+        if (rt.localScale.sqrMagnitude < 0.0001f)
+            rt.localScale = Vector3.one;
+
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+    }
+
+    public void HideCanvasOnly()
+    {
+        AutoBindUI();
         isVisible = false;
 
-        if (canvasRoot != null)
-            canvasRoot.SetActive(false);
+        // 只隐藏内部 ShowStoryPanel，保持 ShowStoryCanvas 自身 active，
+        // 这样挂在 ShowStoryCanvas 下的 HintPanel 等子物体仍可独立控制。
+        if (innerPanel != null)
+            innerPanel.gameObject.SetActive(false);
+    }
+
+    public void Hide()
+    {
+        AutoBindUI();
+        isVisible = false;
+
+        if (innerPanel != null)
+            innerPanel.gameObject.SetActive(false);
+        else if (canvasRoot == null)
+            gameObject.SetActive(false);
 
         onPanelHidden?.Invoke();
     }

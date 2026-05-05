@@ -276,7 +276,7 @@ public class NPCInteraction : MonoBehaviour
     private IEnumerator ShowDialoguePanel(string message)
     {
         // 显示NPCPanel（仅对特殊NPC）
-        string npcName = dialogueNPC.Info != null ? dialogueNPC.Info.Username : (specialDialogueNPC != null ? specialDialogueNPC.GetName() : dialogueNPC.gameObject.name);
+        string npcName = GetMedalNpcName(dialogueNPC);
         if (MedalManager.Instance != null && MedalManager.Instance.data != null && MedalManager.Instance.data.IsSpecialNPC(npcName))
         {
             string panelText = MedalManager.Instance.GetPanelText(npcName);
@@ -326,6 +326,7 @@ public class NPCInteraction : MonoBehaviour
     private void CloseDialogueImmediate()
     {
         SetDialogueNpcMovementPaused(false);
+        NPCController tempNPC = dialogueNPC;
 
         if (typewriterCoroutine != null)
         {
@@ -334,9 +335,9 @@ public class NPCInteraction : MonoBehaviour
         }
 
         // 尝试添加勋章
-        if (dialogueNPC != null && dialogueNPC.Info != null && MedalManager.Instance != null)
+        if (tempNPC != null && MedalManager.Instance != null)
         {
-            MedalManager.Instance.TryAddMedal(dialogueNPC.Info.Username);
+            MedalManager.Instance.TryAddMedal(GetMedalNpcName(tempNPC));
         }
 
         state = DialogueState.Idle;
@@ -362,7 +363,7 @@ public class NPCInteraction : MonoBehaviour
         // 尝试添加勋章
         if (tempNPC != null && MedalManager.Instance != null)
         {
-            string npcName = tempNPC.Info != null ? tempNPC.Info.Username : tempNPC.gameObject.name;
+            string npcName = GetMedalNpcName(tempNPC);
             Debug.Log("尝试添加勋章 for NPC: " + npcName);
             MedalManager.Instance.TryAddMedal(npcName);
         }
@@ -370,6 +371,15 @@ public class NPCInteraction : MonoBehaviour
         {
             Debug.Log("无法添加勋章: tempNPC=" + (tempNPC != null) + ", MedalManager.Instance=" + (MedalManager.Instance != null));
         }
+    }
+
+    private string GetMedalNpcName(NPCController npc)
+    {
+        if (npc is SpecialNPCController special)
+            return special.GetName();
+        if (npc != null && npc.Info != null)
+            return npc.Info.Username;
+        return npc != null ? npc.gameObject.name : "";
     }
 
     // ==================== 打字机效果 ====================
