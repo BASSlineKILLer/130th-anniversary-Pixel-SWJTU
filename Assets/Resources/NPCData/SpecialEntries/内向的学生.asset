@@ -10,14 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4b6a0e83dfb259a4fa3adfa93dabfb9a, type: 3}
-  m_Name: "\u52C7\u8005"
+  m_Name: "\u5185\u5411\u7684\u5B66\u751F"
   m_EditorClassIdentifier: 
-  npcName: "\u52C7\u8005"
-  worldSprite: {fileID: 21300000, guid: 796dd07cf69b7fe4e8182b4f7846c1b8, type: 3}
-  portrait: {fileID: 21300000, guid: 796dd07cf69b7fe4e8182b4f7846c1b8, type: 3}
-  dialogueLines:
-  - "\u4EA4\u5927\u53C2\u4E0E\u4E86\u5F88\u591A\u5927\u56FD\u57FA\u5EFA"
-  - "\u8981\u662F\u80FD\u4EB2\u4E34\u73B0\u573A\u53C2\u4E0E\u5EFA\u8BBE\u5C31\u597D\u4E86"
+  npcName: 
+  worldSprite: {fileID: 21300000, guid: 23d4524dfd323254e838c5840a6fed1e, type: 3}
+  portrait: {fileID: 21300000, guid: 23d4524dfd323254e838c5840a6fed1e, type: 3}
+  dialogueLines: []
   repeatable: 1
   groupScript: {fileID: 0}
   isEasterEgg: 0

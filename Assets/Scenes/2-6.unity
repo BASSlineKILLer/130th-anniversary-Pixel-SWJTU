@@ -23327,9 +23327,41 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 625711717943032930, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 625711717943032930, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 625711717943032930, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 625711717943032930, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 928071357101593199, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
       propertyPath: m_Name
       value: PauseMenu
+      objectReference: {fileID: 0}
+    - target: {fileID: 1018860732226532662, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1018860732226532662, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1018860732226532662, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1018860732226532662, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4547011080275546241, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
       propertyPath: m_AnchorMax.x
@@ -23341,6 +23373,22 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4547011080275546241, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
       propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8573380170025474245, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8573380170025474245, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8573380170025474245, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8573380170025474245, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8628945590656823522, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
@@ -23421,6 +23469,22 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8628945590656823522, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701610874211197833, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701610874211197833, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701610874211197833, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8701610874211197833, guid: fae08836904631f4e84e7de1e11abe9b, type: 3}
+      propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
@@ -23509,9 +23573,9 @@ PolygonCollider2D:
   m_AutoTiling: 0
   m_Points:
     m_Paths:
-    - - {x: 26.939526, y: 17.4067}
-      - {x: 26.961693, y: -18.56335}
-      - {x: 26.962534, y: -24.79358}
+    - - {x: 26.065243, y: 17.394775}
+      - {x: 26.084785, y: -18.56335}
+      - {x: 26.090136, y: -24.867157}
       - {x: 30.195034, y: -24.778656}
       - {x: 71.854324, y: -24.915138}
       - {x: 71.93124, y: 17.387104}
