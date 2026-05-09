@@ -2,6 +2,9 @@ using System.Collections;
 using Cinemachine;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using UnityEngine.ResourceManagement.ResourceProviders;
 
 /// <summary>
 /// 场景切换管理器（单例 + 跨场景持久）
@@ -28,6 +31,10 @@ public class SceneTransitionManager : MonoBehaviour
     private bool shouldPlayOpenOnLoad;
     private bool isTransitioning;
     private float? pendingPlayerScaleX; // 用于跨场景保持朝向
+
+    private float displayProgress;
+    private float targetProgress;
+    private const float PROGRESS_LERP_SPEED = 4f;
 
     /// <summary>
     /// 传送免疫期：传送后短暂禁止再次触发传送点，防止反复横跳
@@ -168,23 +175,42 @@ public class SceneTransitionManager : MonoBehaviour
         yield return LoadSceneAsync(data.sceneName);
     }
 
+    private void Update()
+    {
+        if (!isTransitioning) return;
+        displayProgress = Mathf.Lerp(displayProgress, targetProgress, PROGRESS_LERP_SPEED * Time.unscaledDeltaTime);
+        SceneLoadingOverlay.SetProgress(displayProgress);
+    }
+
     private IEnumerator LoadSceneAsync(string sceneName)
     {
+        displayProgress = 0f;
+        targetProgress = 0f;
         SceneLoadingOverlay.Show(LOADING_SCENE_MESSAGE);
-        var operation = SceneManager.LoadSceneAsync(sceneName);
-        if (operation == null)
-        {
-            SceneLoadingOverlay.Hide();
-            yield break;
-        }
 
-        while (!operation.isDone)
+        var handle = Addressables.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+
+        while (!handle.IsDone)
         {
-            SceneLoadingOverlay.SetProgress(operation.progress / ASYNC_READY_PROGRESS);
+            targetProgress = handle.PercentComplete / ASYNC_READY_PROGRESS;
             yield return null;
         }
 
-        SceneLoadingOverlay.SetProgress(ASYNC_COMPLETE_PROGRESS);
+        if (handle.Status != AsyncOperationStatus.Succeeded)
+        {
+            Debug.LogWarning($"[SceneTransition] Addressables 加载场景 '{sceneName}' 失败，回退到 SceneManager");
+            Addressables.Release(handle);
+            var fallback = SceneManager.LoadSceneAsync(sceneName);
+            if (fallback == null) { SceneLoadingOverlay.Hide(); yield break; }
+            while (!fallback.isDone)
+            {
+                targetProgress = fallback.progress / ASYNC_READY_PROGRESS;
+                yield return null;
+            }
+        }
+
+        targetProgress = ASYNC_COMPLETE_PROGRESS;
+        yield return new WaitForSecondsRealtime(0.2f);
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)

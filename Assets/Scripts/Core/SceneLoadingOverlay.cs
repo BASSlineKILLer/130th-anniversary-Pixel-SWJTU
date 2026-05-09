@@ -13,9 +13,14 @@ public static class SceneLoadingOverlay
     private const string ROOT_NAME = "SceneLoadingOverlay";
     private const string DEFAULT_MESSAGE = "Loading...";
 
+    private const float SHIMMER_WIDTH = 20f;
+    private const float SHIMMER_SPEED = 100f;
+
     private static GameObject root;
     private static TextMeshProUGUI messageText;
     private static Image progressFill;
+    private static RectTransform shimmerRect;
+    private static RectTransform barBackgroundRect;
 
     public static void Show(string message)
     {
@@ -61,6 +66,10 @@ public static class SceneLoadingOverlay
         CreatePanel(root.transform);
         messageText = CreateText(root.transform);
         progressFill = CreateProgressBar(root.transform);
+
+        var runner = root.AddComponent<ShimmerRunner>();
+        runner.Init(shimmerRect, barBackgroundRect, progressFill);
+
         root.SetActive(false);
     }
 
@@ -108,11 +117,11 @@ public static class SceneLoadingOverlay
         backgroundImage.color = new Color(1f, 1f, 1f, 0.25f);
         backgroundImage.raycastTarget = false;
 
-        var backgroundRect = backgroundImage.rectTransform;
-        backgroundRect.anchorMin = new Vector2(0.5f, 0.5f);
-        backgroundRect.anchorMax = new Vector2(0.5f, 0.5f);
-        backgroundRect.sizeDelta = new Vector2(BAR_WIDTH, BAR_HEIGHT);
-        backgroundRect.anchoredPosition = new Vector2(0f, BAR_Y);
+        barBackgroundRect = backgroundImage.rectTransform;
+        barBackgroundRect.anchorMin = new Vector2(0.5f, 0.5f);
+        barBackgroundRect.anchorMax = new Vector2(0.5f, 0.5f);
+        barBackgroundRect.sizeDelta = new Vector2(BAR_WIDTH, BAR_HEIGHT);
+        barBackgroundRect.anchoredPosition = new Vector2(0f, BAR_Y);
 
         var fill = new GameObject("ProgressFill");
         fill.transform.SetParent(background.transform, false);
@@ -129,6 +138,70 @@ public static class SceneLoadingOverlay
         fillRect.anchorMax = Vector2.one;
         fillRect.offsetMin = Vector2.zero;
         fillRect.offsetMax = Vector2.zero;
+
+        shimmerRect = CreateShimmer(background.transform);
+
         return fillImage;
+    }
+
+    private static RectTransform CreateShimmer(Transform parent)
+    {
+        var shimmer = new GameObject("Shimmer");
+        shimmer.transform.SetParent(parent, false);
+
+        var img = shimmer.AddComponent<Image>();
+        img.raycastTarget = false;
+
+        var gradient = new Texture2D(4, 1);
+        gradient.SetPixels(new[] {
+            new Color(1f, 1f, 1f, 0f),
+            new Color(1f, 1f, 1f, 0.55f),
+            new Color(1f, 1f, 1f, 0.55f),
+            new Color(1f, 1f, 1f, 0f),
+        });
+        gradient.Apply();
+        img.sprite = Sprite.Create(gradient, new Rect(0, 0, 4, 1), new Vector2(0.5f, 0.5f));
+
+        var rect = img.rectTransform;
+        rect.anchorMin = new Vector2(0f, 0f);
+        rect.anchorMax = new Vector2(0f, 1f);
+        rect.sizeDelta = new Vector2(SHIMMER_WIDTH, 0f);
+        rect.anchoredPosition = new Vector2(-SHIMMER_WIDTH, 0f);
+
+        return rect;
+    }
+
+    private class ShimmerRunner : MonoBehaviour
+    {
+        private RectTransform shimmer;
+        private RectTransform barRect;
+        private Image fill;
+        private float shimmerX;
+
+        public void Init(RectTransform shimmerRect, RectTransform barBackground, Image progressFill)
+        {
+            shimmer = shimmerRect;
+            barRect = barBackground;
+            fill = progressFill;
+            shimmerX = -SHIMMER_WIDTH;
+        }
+
+        private void Update()
+        {
+            if (shimmer == null || fill == null) return;
+
+            float fillWidth = barRect.sizeDelta.x * fill.fillAmount;
+            if (fillWidth < 1f)
+            {
+                shimmer.anchoredPosition = new Vector2(-SHIMMER_WIDTH, 0f);
+                return;
+            }
+
+            shimmerX += SHIMMER_SPEED * Time.unscaledDeltaTime;
+            if (shimmerX > fillWidth + SHIMMER_WIDTH)
+                shimmerX = -SHIMMER_WIDTH;
+
+            shimmer.anchoredPosition = new Vector2(shimmerX - SHIMMER_WIDTH * 0.5f, 0f);
+        }
     }
 }

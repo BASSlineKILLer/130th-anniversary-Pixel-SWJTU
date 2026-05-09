@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b6a0e83dfb259a4fa3adfa93dabfb9a, type: 3}
+  m_Name: "\u5973\u6559\u5E08B"
+  m_EditorClassIdentifier: 
+  npcName: 
+  worldSprite: {fileID: 21300000, guid: df828c9ebb7a36647bab14dd7637138e, type: 3}
+  portrait: {fileID: 21300000, guid: df828c9ebb7a36647bab14dd7637138e, type: 3}
+  dialogueLines: []
+  repeatable: 1
+  groupScript: {fileID: 11400000, guid: e6d5389ec6223ac42a82747e793287eb, type: 2}
+  isEasterEgg: 0

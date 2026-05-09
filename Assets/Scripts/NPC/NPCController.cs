@@ -120,6 +120,8 @@ public class NPCController : MonoBehaviour
         if (spriteRenderer == null)
             spriteRenderer = GetComponent<SpriteRenderer>();
 
+        if (info.Sprite == null)
+            Debug.LogWarning($"[NPCController] NPC {info.Id} ({info.Username}) 的 Sprite 为 null");
         if (info.Sprite != null && spriteRenderer != null)
         {
             spriteRenderer.sprite = info.Sprite;

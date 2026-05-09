@@ -54,6 +54,11 @@ public class NPCInteraction : MonoBehaviour
     // 特殊 NPC 多轮对话引用
     private SpecialNPCController specialDialogueNPC;
 
+    // 群体剧情引用
+    private DialogueScript groupScript;
+    private int groupLineIndex;
+    private SpecialNPCController groupHostNPC;
+
     // 附近的 NPC 集合
     private HashSet<NPCController> nearbyNPCs = new HashSet<NPCController>();
     // 当前最近的 NPC（显示气泡的那个）
@@ -100,8 +105,9 @@ public class NPCInteraction : MonoBehaviour
             case DialogueState.Waiting:
                 if (inputTriggered)
                 {
-                    // 特殊 NPC：尝试推进到下一行；普通 NPC：直接关闭
-                    if (specialDialogueNPC != null)
+                    if (groupScript != null)
+                        AdvanceGroupDialogue();
+                    else if (specialDialogueNPC != null)
                         AdvanceSpecialDialogue();
                     else
                         CloseDialogue();
@@ -187,6 +193,16 @@ public class NPCInteraction : MonoBehaviour
         var special = npc as SpecialNPCController;
         if (special != null)
         {
+            // 优先走群体剧情
+            if (special.specialData != null && special.specialData.groupScript != null)
+            {
+                var script = special.specialData.groupScript;
+                if (script.repeatable || !IsGroupScriptCompleted(script))
+                {
+                    OpenGroupDialogue(special, script);
+                    return;
+                }
+            }
             OpenSpecialDialogue(special);
             return;
         }
@@ -214,6 +230,118 @@ public class NPCInteraction : MonoBehaviour
 
         // 淡入面板
         StartCoroutine(ShowDialoguePanel(npc.Info.Message));
+    }
+
+    // ==================== 群体剧情 ====================
+
+    private void OpenGroupDialogue(SpecialNPCController host, DialogueScript script)
+    {
+        groupScript = script;
+        groupLineIndex = 0;
+        groupHostNPC = host;
+        dialogueNPC = host;
+        SetDialogueNpcMovementPaused(true);
+
+        host.HideBubble();
+        ResetDialogueContent();
+
+        ApplyGroupLine(script.dialogueLines[0], host);
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.SetDialogueLock(true);
+
+        StartCoroutine(ShowGroupDialoguePanel(script.dialogueLines[0].text));
+    }
+
+    private void AdvanceGroupDialogue()
+    {
+        groupLineIndex++;
+        if (groupLineIndex >= groupScript.dialogueLines.Length)
+        {
+            CloseGroupDialogue();
+            return;
+        }
+
+        DialogueLine line = groupScript.dialogueLines[groupLineIndex];
+        ApplyGroupLine(line, groupHostNPC);
+
+        state = DialogueState.Typing;
+        typewriterCoroutine = StartCoroutine(TypewriterRoutine(line.text));
+    }
+
+    /// <summary>
+    /// 根据台词条目切换立绘和名字
+    /// </summary>
+    private void ApplyGroupLine(DialogueLine line, SpecialNPCController host)
+    {
+        bool isNarration = string.IsNullOrEmpty(line.speakerName);
+        string speakerName = isNarration ? host.GetName() : line.speakerName;
+
+        Sprite portrait = line.portraitOverride;
+        if (portrait == null && !isNarration)
+        {
+            var speakerNpc = SpecialNPCManager.Instance != null
+                ? SpecialNPCManager.Instance.GetByName(line.speakerName)
+                : null;
+            portrait = speakerNpc != null ? speakerNpc.GetPortrait() : host.GetPortrait();
+        }
+        if (portrait == null)
+            portrait = host.GetPortrait();
+
+        SetPortrait(portrait);
+        SetName(speakerName);
+        PrepareMessage(line.text);
+    }
+
+    private IEnumerator ShowGroupDialoguePanel(string firstLineText)
+    {
+        yield return StartCoroutine(UIAnimationHelper.FadeIn(dialogueCanvasGroup, fadeDuration));
+        state = DialogueState.Typing;
+        typewriterCoroutine = StartCoroutine(TypewriterRoutine(firstLineText));
+    }
+
+    private void CloseGroupDialogue()
+    {
+        var finishedScript = groupScript;
+        var finishedHost = groupHostNPC;
+
+        groupScript = null;
+        groupHostNPC = null;
+        groupLineIndex = 0;
+        dialogueNPC = null;
+
+        SetDialogueNpcMovementPaused(false);
+
+        if (typewriterCoroutine != null)
+        {
+            StopCoroutine(typewriterCoroutine);
+            typewriterCoroutine = null;
+        }
+
+        state = DialogueState.Idle;
+
+        if (!CanRunDialogueCoroutine())
+        {
+            CloseDialogueImmediate();
+            return;
+        }
+
+        StartCoroutine(HideGroupDialoguePanel(finishedScript));
+    }
+
+    private IEnumerator HideGroupDialoguePanel(DialogueScript script)
+    {
+        yield return StartCoroutine(UIAnimationHelper.FadeOut(dialogueCanvasGroup, fadeDuration));
+        ResetDialogueUI();
+
+        if (GameManager.Instance != null)
+            GameManager.Instance.SetDialogueLock(false);
+
+        if (MedalManager.Instance != null && script != null && script.medalNpcIds != null)
+        {
+            foreach (string id in script.medalNpcIds)
+                MedalManager.Instance.TryAddMedal(id);
+        }
     }
 
     // ==================== 特殊 NPC 多轮对话 ====================
@@ -371,6 +499,18 @@ public class NPCInteraction : MonoBehaviour
         {
             Debug.Log("无法添加勋章: tempNPC=" + (tempNPC != null) + ", MedalManager.Instance=" + (MedalManager.Instance != null));
         }
+    }
+
+    private bool IsGroupScriptCompleted(DialogueScript script)
+    {
+        if (MedalManager.Instance == null || script.medalNpcIds == null || script.medalNpcIds.Length == 0)
+            return false;
+        foreach (string id in script.medalNpcIds)
+        {
+            if (!MedalManager.Instance.HasTalkedTo(id))
+                return false;
+        }
+        return true;
     }
 
     private string GetMedalNpcName(NPCController npc)

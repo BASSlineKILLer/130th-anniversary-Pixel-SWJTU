@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GuidePanel : MonoBehaviour
 {
@@ -40,10 +41,13 @@ public class GuidePanel : MonoBehaviour
     private int currentStepIndex = -1;
     private bool isFirstTime = true;
     private bool isCompleted;
+    private bool wasPausedLastFrame;
+    private GraphicRaycaster guideRaycaster;
     // private bool dialoguePanelWasActive = false;
 
     private void Start()
     {
+        guideRaycaster = GetComponentInParent<GraphicRaycaster>();
         BuildLegacyStepsIfNeeded();
         HideAllPanels();
 
@@ -66,12 +70,25 @@ public class GuidePanel : MonoBehaviour
 
     private void Update()
     {
+        SyncRaycasterWithPauseState();
+
         if (!isFirstTime) return;
         if (isCompleted) return;
+        if (GameManager.Instance != null && GameManager.Instance.isPaused) return;
 
         var step = GetCurrentStep();
         if (step == null) return;
         if (CanAdvanceByInput(step)) AdvanceStep();
+    }
+
+    private void SyncRaycasterWithPauseState()
+    {
+        if (guideRaycaster == null) return;
+        bool isPaused = GameManager.Instance != null && GameManager.Instance.isPaused;
+        if (isPaused == wasPausedLastFrame) return;
+
+        wasPausedLastFrame = isPaused;
+        guideRaycaster.enabled = !isPaused;
     }
 
     private void OnDestroy()

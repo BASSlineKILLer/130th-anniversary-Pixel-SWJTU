@@ -48,24 +48,22 @@ public class NPCManager : MonoBehaviour
         }
         Instance = this;
 
-        npcPrefab = Resources.Load<GameObject>(npcPrefabPath);
-        if (npcPrefab == null)
-            Debug.LogError($"[NPCManager] 找不到 Prefab: Resources/{npcPrefabPath}");
-
         npcParent = new GameObject("NPCs").transform;
         npcParent.SetParent(transform);
     }
 
     private void Start()
     {
-        StartCoroutine(SpawnWhenDistributorReady());
+        npcPrefab = Resources.Load<GameObject>(npcPrefabPath);
+        if (npcPrefab == null)
+        {
+            Debug.LogError($"[NPCManager] 找不到 Prefab: Resources/{npcPrefabPath}");
+            return;
+        }
+        StartCoroutine(SpawnWhenReady());
     }
 
-    /// <summary>
-    /// 等 Distributor 完成首次加载再生成 NPC。
-    /// 首次冷启动玩家很快点进场景时，数据可能仍在后台拉取；避免空列表导致 NPC 消失。
-    /// </summary>
-    private IEnumerator SpawnWhenDistributorReady()
+    private IEnumerator SpawnWhenReady()
     {
         while (NPCDistributor.Instance == null || !NPCDistributor.Instance.IsReady)
             yield return null;

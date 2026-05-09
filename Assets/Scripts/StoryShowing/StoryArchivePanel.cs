@@ -176,7 +176,7 @@ public class StoryArchivePanel : MonoBehaviour
         if (storyText != null)
         {
             string displayText = isUnlocked ? entry.storyText : LOCKED_STORY;
-            storyText.text = $"<b>{npc.npcName}</b>\n\n{displayText}";
+            storyText.text = $"{npc.npcName}\n\n{displayText}";
         }
 
         if (pageIndicator != null)

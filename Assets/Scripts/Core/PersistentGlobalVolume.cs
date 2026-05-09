@@ -43,7 +43,11 @@ public class PersistentGlobalVolume : MonoBehaviour
         if (cam == null) return;
 
         var urpData = cam.GetComponent<UniversalAdditionalCameraData>();
-        if (urpData == null) return;
+        if (urpData == null)
+        {
+            urpData = cam.gameObject.AddComponent<UniversalAdditionalCameraData>();
+            Debug.Log($"[PersistentGlobalVolume] 为 {cam.name} 添加 UniversalAdditionalCameraData");
+        }
 
         if (!urpData.renderPostProcessing)
         {

@@ -171,6 +171,12 @@ public class MedalManager : MonoBehaviour
         return true;
     }
 
+    /// 查询某个 NPC ID 是否已对话过
+    public bool HasTalkedTo(string npcUniqueID)
+    {
+        return talkedNPCs.Contains(npcUniqueID);
+    }
+
     /// 更新UI显示
     private void UpdateMedalUI()
     {

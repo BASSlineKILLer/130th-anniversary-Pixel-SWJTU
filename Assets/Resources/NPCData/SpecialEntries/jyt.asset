@@ -16,9 +16,10 @@ MonoBehaviour:
   worldSprite: {fileID: 21300000, guid: 5f1ad8f5b5cd2f04a8915634d628d56d, type: 3}
   portrait: {fileID: 21300000, guid: 5f1ad8f5b5cd2f04a8915634d628d56d, type: 3}
   dialogueLines:
-  - "\u6211\u662F.LINE\u7684\u9702\u79CB\u68A7"
+  - "\u6211\u662F.LINE\u7684\u79CB\u68A7"
   - "\u5F88\u9AD8\u5174\u89C1\u5230\u4F60"
   - "\u4F60\u8BF4\u5982\u679C\u6211\u4EEC\u90FD\u662F\u6E38\u620F\u91CC\u7684\u4EBA\u7269"
   - "\u90A3\u521B\u9020\u6211\u4EEC\u7684\u4EBA\u4E00\u5B9A\u76F8\u5F53\u5389\u5BB3\u5427"
   repeatable: 1
+  groupScript: {fileID: 0}
   isEasterEgg: 1

@@ -32,6 +32,10 @@ public class SpecialNPCEntry : ScriptableObject
     [Tooltip("对话结束后是否可以重新触发（从头开始）")]
     public bool repeatable = true;
 
+    [Header("群体剧情（可选）")]
+    [Tooltip("若配置此脚本，按 E 时将播放多 NPC 群体对话，忽略上方 dialogueLines")]
+    public DialogueScript groupScript;
+
     [Header("分类")]
     [Tooltip("是否为彩蛋 NPC（在 TaskPanel 卡片上加彩蛋标记和金色边框）")]
     public bool isEasterEgg = false;
