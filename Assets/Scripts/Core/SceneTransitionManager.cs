@@ -17,6 +17,7 @@ public class SceneTransitionManager : MonoBehaviour
     private const float ASYNC_READY_PROGRESS = 0.9f;
     private const float ASYNC_COMPLETE_PROGRESS = 1f;
     private const string LOADING_SCENE_MESSAGE = "Loading...";
+    private const float WAIT_NPC_SPAWN_TIMEOUT = 8f;
 
     [Header("玩家配置")]
     [Tooltip("Player 的 Tag，用于场景加载后查找玩家")]
@@ -246,6 +247,7 @@ public class SceneTransitionManager : MonoBehaviour
         // 若是搜索跨场景传送，此时 NPCManager 已生成完 NPC，定位玩家到目标 NPC
         if (!string.IsNullOrEmpty(pendingNPCUsername))
         {
+            yield return WaitForNPCSpawnFinished();
             PlacePlayerAtNPC(pendingNPCUsername);
             pendingNPCUsername = null;
             GrantTeleportImmunity();
@@ -263,6 +265,17 @@ public class SceneTransitionManager : MonoBehaviour
         if (CircleWipeTransition.Instance != null)
             yield return CircleWipeTransition.Instance.PlayOpen();
         isTransitioning = false;
+    }
+
+    private IEnumerator WaitForNPCSpawnFinished()
+    {
+        float startTime = Time.realtimeSinceStartup;
+        while (NPCManager.Instance == null || !NPCManager.Instance.IsSpawnFinished)
+        {
+            if (Time.realtimeSinceStartup - startTime >= WAIT_NPC_SPAWN_TIMEOUT)
+                yield break;
+            yield return null;
+        }
     }
 
     private void PlacePlayerAtNPC(string npcUsername)

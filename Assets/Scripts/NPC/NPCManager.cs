@@ -12,8 +12,11 @@ public class NPCManager : MonoBehaviour
 {
     /// <summary>未配置 spawnPointCapacities 时的默认点位容量</summary>
     private const int DEFAULT_CAPACITY = 1;
+    private const int SPAWN_PER_FRAME = 8;
 
     public static NPCManager Instance { get; private set; }
+    public bool IsSpawning { get; private set; }
+    public bool IsSpawnFinished { get; private set; }
 
     [Header("NPC 生成配置")]
     [Tooltip("NPC Prefab 在 Resources 中的路径（不含扩展名）")]
@@ -54,10 +57,12 @@ public class NPCManager : MonoBehaviour
 
     private void Start()
     {
+        IsSpawnFinished = false;
         npcPrefab = Resources.Load<GameObject>(npcPrefabPath);
         if (npcPrefab == null)
         {
             Debug.LogError($"[NPCManager] 找不到 Prefab: Resources/{npcPrefabPath}");
+            IsSpawnFinished = true;
             return;
         }
         StartCoroutine(SpawnWhenReady());
@@ -68,20 +73,21 @@ public class NPCManager : MonoBehaviour
         while (NPCDistributor.Instance == null || !NPCDistributor.Instance.IsReady)
             yield return null;
 
-        SpawnFromDistributor();
+        StartCoroutine(SpawnFromDistributorRoutine());
     }
 
     /// <summary>
     /// 从 NPCDistributor 获取本场景的 NPC 扁平列表，再按本场景的点位容量轮询装桶生成。
     /// </summary>
-    private void SpawnFromDistributor()
+    private IEnumerator SpawnFromDistributorRoutine()
     {
-        if (npcPrefab == null) return;
+        if (npcPrefab == null) yield break;
 
         if (NPCDistributor.Instance == null)
         {
             Debug.LogWarning("[NPCManager] NPCDistributor 不存在，无法获取 NPC 数据");
-            return;
+            IsSpawnFinished = true;
+            yield break;
         }
 
         string sceneName = SceneManager.GetActiveScene().name;
@@ -90,10 +96,15 @@ public class NPCManager : MonoBehaviour
         if (spawnPoints.Count == 0)
         {
             Debug.LogWarning($"[NPCManager] 场景 '{sceneName}' 未配置任何点位，{npcList.Count} 个 NPC 未生成");
-            return;
+            IsSpawnFinished = true;
+            yield break;
         }
 
-        int placed = DistributeIntoPoints(npcList);
+        IsSpawning = true;
+        int placed = 0;
+        yield return DistributeIntoPointsRoutine(npcList, value => placed = value);
+        IsSpawning = false;
+        IsSpawnFinished = true;
         spawnedCount = spawnedNPCs.Count;
 
         if (placed < npcList.Count)
@@ -105,10 +116,11 @@ public class NPCManager : MonoBehaviour
     }
 
     /// <summary>轮询装桶：每轮遍历所有点位各放 1 个，该点位满则跳过。返回成功放入的 NPC 数</summary>
-    private int DistributeIntoPoints(List<NPCInfo> npcList)
+    private IEnumerator DistributeIntoPointsRoutine(List<NPCInfo> npcList, System.Action<int> onComplete)
     {
         var current = new int[spawnPoints.Count];
         int npcIdx = 0;
+        int spawnedThisFrame = 0;
         while (npcIdx < npcList.Count)
         {
             bool placedThisRound = false;
@@ -116,11 +128,17 @@ public class NPCManager : MonoBehaviour
             {
                 if (!TryPlaceAtPoint(i, current, npcList[npcIdx])) continue;
                 npcIdx++;
+                spawnedThisFrame++;
                 placedThisRound = true;
+                if (spawnedThisFrame >= SPAWN_PER_FRAME)
+                {
+                    spawnedThisFrame = 0;
+                    yield return null;
+                }
             }
             if (!placedThisRound) break;
         }
-        return npcIdx;
+        onComplete?.Invoke(npcIdx);
     }
 
     private bool TryPlaceAtPoint(int pointIdx, int[] current, NPCInfo info)

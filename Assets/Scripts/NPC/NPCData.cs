@@ -20,6 +20,9 @@ public class NPCRawData
     public int id;
     public string username;
     public string message;
+    public string grade;
+    public string college;
+    public string identity;
     public string config;
     public string image;
     public string status;
@@ -34,5 +37,8 @@ public class NPCInfo
     public int Id;
     public string Username;
     public string Message;
+    public string Grade;
+    public string College;
+    public string Identity;
     public Sprite Sprite; // 可能为 null（image 为空时）
 }

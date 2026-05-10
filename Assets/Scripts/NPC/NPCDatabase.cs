@@ -45,6 +45,9 @@ public class NPCDatabase : ScriptableObject
                 Id = -(i + 1),
                 Username = entry.username,
                 Message = entry.message,
+                Grade = string.Empty,
+                College = string.Empty,
+                Identity = string.Empty,
                 Sprite = entry.sprite
             });
         }

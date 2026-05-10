@@ -1,4 +1,7 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -65,6 +68,23 @@ namespace SWJTUGame.UI
 
             // 根据是否有存档来显示/隐藏"继续游戏"按钮
             UpdateContinueButton();
+            NPCDistributor.Instance?.Preload();
+            StartCoroutine(PreloadGameSceneDependencies());
+        }
+
+        private IEnumerator PreloadGameSceneDependencies()
+        {
+            if (string.IsNullOrEmpty(gameSceneName)) yield break;
+
+            var handle = Addressables.DownloadDependenciesAsync(gameSceneName, false);
+            yield return handle;
+
+            if (handle.Status == AsyncOperationStatus.Succeeded)
+                Debug.Log($"[MainMenuManager] 已预下载场景依赖: {gameSceneName}");
+            else
+                Debug.LogWarning($"[MainMenuManager] 场景依赖预下载失败或不是 Addressables 场景: {gameSceneName}");
+
+            Addressables.Release(handle);
         }
 
         // ===== 按钮回调方法（在 Inspector 中绑定到 Button.OnClick） =====

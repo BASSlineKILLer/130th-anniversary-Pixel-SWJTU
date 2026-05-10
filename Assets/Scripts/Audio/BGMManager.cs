@@ -122,6 +122,12 @@ public class BGMManager : MonoBehaviour
     public float GetVolume() => currentVolume;
     public int BGMCount => bgmTracks.Length;
 
+    public void SetPausedByBrowser(bool paused)
+    {
+        if (!currentBGMInstance.isValid()) return;
+        currentBGMInstance.setPaused(paused);
+    }
+
     /// <summary>
     /// 切换到指定索引的 BGM（停止当前播放，重新开始新的 BGM）
     /// </summary>

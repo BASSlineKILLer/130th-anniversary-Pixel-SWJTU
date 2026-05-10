@@ -31,6 +31,7 @@ public class NPCDistributor : MonoBehaviour
         = new Dictionary<string, List<NPCInfo>>();
 
     private bool distributed;
+    private bool isLoading;
 
     private void Awake()
     {
@@ -48,7 +49,7 @@ public class NPCDistributor : MonoBehaviour
 
     private void Start()
     {
-        LoadAndDistribute();
+        Preload();
     }
 
     /// <summary>
@@ -57,10 +58,23 @@ public class NPCDistributor : MonoBehaviour
     /// </summary>
     public void LoadAndDistribute()
     {
+        Preload(true);
+    }
+
+    public void Preload(bool forceReload = false)
+    {
+        if (isLoading) return;
+        if (IsReady && !forceReload) return;
+        StartCoroutine(LoadAndDistributeRoutine());
+    }
+
+    private IEnumerator LoadAndDistributeRoutine()
+    {
         allNPCs.Clear();
         sceneAssignment.Clear();
         distributed = false;
         IsReady = false;
+        isLoading = true;
 
         if (database != null && database.clearCacheOnStart)
         {
@@ -75,12 +89,14 @@ public class NPCDistributor : MonoBehaviour
 
         if (database != null && database.enableApiFetch)
         {
-            StartCoroutine(FetchAndMerge());
+            yield return FetchAndMerge();
         }
         else
         {
             EnsureDistributed();
         }
+
+        isLoading = false;
     }
 
     private IEnumerator FetchAndMerge()
@@ -181,7 +197,8 @@ public class NPCDistributor : MonoBehaviour
     {
         if (!IsReady)
         {
-            Debug.Log("[NPCDistributor] Redistribute 跳过：首次加载尚未就绪，沉用已有流程");
+            Preload();
+            Debug.Log("[NPCDistributor] Redistribute 跳过：首次加载尚未就绪，沿用预加载流程");
             return;
         }
         distributed = false;

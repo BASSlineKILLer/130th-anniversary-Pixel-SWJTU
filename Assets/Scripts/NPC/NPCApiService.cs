@@ -21,10 +21,12 @@ public static class NPCApiService
     private const int RequestTimeoutSeconds = 20;
     private const int MaxRequestAttempts = 3;
     private const float RetryDelaySeconds = 1.2f;
+    private const int DecodeItemsPerFrame = 4;
 
     // NPC 角色图的 pixelsPerUnit，值越小场景中越大
     // 32x32 像素图 → pixelsPerUnit=32 → 场景中 1 个单位大小
     public const float DefaultPixelsPerUnit = 32f;
+    private static readonly Dictionary<int, Sprite> SpriteMemoryCache = new Dictionary<int, Sprite>();
 
     /// <summary>
     /// 获取 NPC 列表。策略：先从本地 JSON 缓存秒加载，再后台请求 API 更新。
@@ -39,22 +41,25 @@ public static class NPCApiService
         if (File.Exists(JsonCachePath))
         {
             var cacheSw = Stopwatch.StartNew();
+            NPCApiResponse cachedResponse = null;
             try
             {
                 string cachedJson = File.ReadAllText(JsonCachePath);
-                NPCApiResponse cachedResponse = JsonUtility.FromJson<NPCApiResponse>(cachedJson);
-                if (cachedResponse != null && cachedResponse.success && cachedResponse.data != null)
-                {
-                    var cacheResults = DecodeNPCList(cachedResponse.data);
-                    cacheSw.Stop();
-                    Debug.Log($"[NPC] 缓存加载: {cacheResults.Count} 个 NPC, 耗时 {cacheSw.ElapsedMilliseconds}ms");
-                    onSuccess?.Invoke(cacheResults);
-                    cacheLoaded = true;
-                }
+                cachedResponse = JsonUtility.FromJson<NPCApiResponse>(cachedJson);
             }
             catch (Exception e)
             {
                 Debug.LogWarning($"[NPC] 缓存读取失败，将从网络加载: {e.Message}");
+            }
+
+            if (cachedResponse != null && cachedResponse.success && cachedResponse.data != null)
+            {
+                List<NPCInfo> cacheResults = null;
+                yield return DecodeNPCListAsync(cachedResponse.data, value => cacheResults = value);
+                cacheSw.Stop();
+                Debug.Log($"[NPC] 缓存加载: {cacheResults.Count} 个 NPC, 耗时 {cacheSw.ElapsedMilliseconds}ms");
+                onSuccess?.Invoke(cacheResults);
+                cacheLoaded = true;
             }
         }
 
@@ -143,7 +148,8 @@ public static class NPCApiService
         SaveJsonCache(json);
 
         var decodeSw = Stopwatch.StartNew();
-        var results = DecodeNPCList(response.data);
+        List<NPCInfo> results = null;
+        yield return DecodeNPCListAsync(response.data, value => results = value);
         decodeSw.Stop();
         totalSw.Stop();
 
@@ -152,9 +158,10 @@ public static class NPCApiService
         onSuccess?.Invoke(results);
     }
 
-    private static List<NPCInfo> DecodeNPCList(NPCRawData[] rawList)
+    private static IEnumerator DecodeNPCListAsync(NPCRawData[] rawList, Action<List<NPCInfo>> onComplete)
     {
         var results = new List<NPCInfo>();
+        int decodedThisFrame = 0;
         foreach (var raw in rawList)
         {
             Sprite sprite = LoadCachedSprite(raw.id);
@@ -170,10 +177,20 @@ public static class NPCApiService
                 Id = raw.id,
                 Username = raw.username,
                 Message = raw.message,
+                Grade = raw.grade,
+                College = raw.college,
+                Identity = raw.identity,
                 Sprite = sprite
             });
+
+            decodedThisFrame++;
+            if (decodedThisFrame >= DecodeItemsPerFrame)
+            {
+                decodedThisFrame = 0;
+                yield return null;
+            }
         }
-        return results;
+        onComplete?.Invoke(results);
     }
 
     public static Sprite Base64ToSprite(string base64DataUrl, float pixelsPerUnit = DefaultPixelsPerUnit)
@@ -242,6 +259,11 @@ public static class NPCApiService
     {
         try
         {
+            SpriteMemoryCache[npcId] = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height),
+                new Vector2(0.5f, 0f), DefaultPixelsPerUnit);
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return;
+#endif
             EnsureCacheDir();
             File.WriteAllBytes(GetImageCachePath(npcId), texture.EncodeToPNG());
         }
@@ -253,6 +275,11 @@ public static class NPCApiService
 
     private static Sprite LoadCachedSprite(int npcId, float pixelsPerUnit = DefaultPixelsPerUnit)
     {
+        if (SpriteMemoryCache.TryGetValue(npcId, out var cachedSprite))
+            return cachedSprite;
+#if UNITY_WEBGL && !UNITY_EDITOR
+        return null;
+#endif
         string path = GetImageCachePath(npcId);
         if (!File.Exists(path))
             return null;
@@ -265,8 +292,10 @@ public static class NPCApiService
             if (!tex.LoadImage(bytes))
                 return null;
 
-            return Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
+            var sprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height),
                 new Vector2(0.5f, 0f), pixelsPerUnit);
+            SpriteMemoryCache[npcId] = sprite;
+            return sprite;
         }
         catch
         {
@@ -276,6 +305,10 @@ public static class NPCApiService
 
     public static void RemoveCachedImage(int npcId)
     {
+        SpriteMemoryCache.Remove(npcId);
+#if UNITY_WEBGL && !UNITY_EDITOR
+        return;
+#endif
         string path = GetImageCachePath(npcId);
         if (!File.Exists(path)) return;
 
@@ -292,6 +325,10 @@ public static class NPCApiService
 
     public static void ClearCache()
     {
+        SpriteMemoryCache.Clear();
+#if UNITY_WEBGL && !UNITY_EDITOR
+        return;
+#endif
         if (Directory.Exists(CacheDir))
         {
             Directory.Delete(CacheDir, true);
@@ -301,6 +338,9 @@ public static class NPCApiService
 
     public static long GetCacheSize()
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        return 0;
+#endif
         if (!Directory.Exists(CacheDir))
             return 0;
 

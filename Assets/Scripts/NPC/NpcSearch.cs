@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -9,6 +10,14 @@ using TMPro;
 public class NpcSearch : MonoBehaviour
 {
     private const int MAX_CANDIDATES = 10;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+    [DllImport("__Internal")]
+    private static extern void WebGLInputBridge_Show(string objectName, string methodName, string initialText);
+
+    [DllImport("__Internal")]
+    private static extern void WebGLInputBridge_Hide();
+#endif
 
     [Header("UI 组件")]
     [Tooltip("检索输入框")]
@@ -208,10 +217,36 @@ public class NpcSearch : MonoBehaviour
         if (searchInput != null)
         {
             searchInput.text = string.Empty;
+#if !UNITY_WEBGL || UNITY_EDITOR
             searchInput.ActivateInputField();
+#endif
+            ShowWebGLInputBridge();
         }
         ClearCandidateCards();
         GameManager.Instance?.SetDialogueLock(true);
+    }
+
+    public void OnWebGLSearchInputChanged(string value)
+    {
+        if (searchInput == null) return;
+        searchInput.SetTextWithoutNotify(value);
+        OnSearchInputChanged(value);
+    }
+
+    private void ShowWebGLInputBridge()
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        WebGLInput.captureAllKeyboardInput = false;
+        WebGLInputBridge_Show(gameObject.name, nameof(OnWebGLSearchInputChanged), searchInput != null ? searchInput.text : string.Empty);
+#endif
+    }
+
+    private static void HideWebGLInputBridge()
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        WebGLInputBridge_Hide();
+        WebGLInput.captureAllKeyboardInput = true;
+#endif
     }
 
     /// <summary>
@@ -434,6 +469,7 @@ public class NpcSearch : MonoBehaviour
         if (searchPanel != null) searchPanel.SetActive(false);
         if (errorPanel != null) errorPanel.SetActive(false);
         if (teleportListPanel != null) teleportListPanel.gameObject.SetActive(false);
+        HideWebGLInputBridge();
         ClearCandidateCards();
         isSearching = false;
         GameManager.Instance?.SetDialogueLock(false);
