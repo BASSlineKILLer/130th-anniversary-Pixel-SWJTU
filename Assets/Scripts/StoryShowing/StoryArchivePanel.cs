@@ -63,7 +63,7 @@ public class StoryArchivePanel : MonoBehaviour
             PrevPage();
         else if (Input.GetKeyDown(KeyCode.D))
             NextPage();
-        else if (Input.GetKeyDown(KeyCode.Space))
+        else if (Input.GetKeyDown(KeyCode.F))
             Hide();
     }
 

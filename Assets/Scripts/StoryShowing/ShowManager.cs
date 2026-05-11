@@ -7,7 +7,7 @@ public class ShowManager : MonoBehaviour
     public ShowPanel showPanel;
     public SpecialNPCData data;
 
-    private bool wasSpacePressed = false;
+    private bool wasFPressed = false;
     private bool playerInTrigger = false;
 
     private void Start()
@@ -40,10 +40,10 @@ public class ShowManager : MonoBehaviour
     {
         if (!playerInTrigger) return;
 
-        bool isSpaceDown = Input.GetKey(KeyCode.Space);
-        if (isSpaceDown && !wasSpacePressed)
+        bool isFDown = Input.GetKey(KeyCode.F);
+        if (isFDown && !wasFPressed)
             ShowStory();
-        wasSpacePressed = isSpaceDown;
+        wasFPressed = isFDown;
     }
 
     private void ShowStory()

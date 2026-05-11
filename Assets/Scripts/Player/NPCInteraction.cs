@@ -87,7 +87,7 @@ public class NPCInteraction : MonoBehaviour
             UpdateClosestNPC();
 
         // 2. 处理交互输入
-        bool inputTriggered = Input.GetKeyDown(interactKey) || Input.GetMouseButtonDown(0);
+        bool inputTriggered = Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0);
 
         switch (state)
         {

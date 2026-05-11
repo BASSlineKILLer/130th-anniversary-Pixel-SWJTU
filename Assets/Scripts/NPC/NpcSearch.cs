@@ -182,13 +182,12 @@ public class NpcSearch : MonoBehaviour
 
     void Update()
     {
-        if (isSearching && Input.GetKeyDown(KeyCode.Space))
+        if (isSearching && Input.GetKeyDown(KeyCode.F))
         {
             if (searchInput != null && searchInput.isFocused) return;
-            // 如果正在搜索，按 Space 关闭面板
             ClosePanel();
         }
-        else if (isInRange && Input.GetKeyDown(KeyCode.Space))
+        else if (isInRange && Input.GetKeyDown(KeyCode.F))
         {
             if (MedalManager.Instance != null)
             {

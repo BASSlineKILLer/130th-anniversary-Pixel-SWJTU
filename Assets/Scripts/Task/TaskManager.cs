@@ -7,7 +7,7 @@ public class TaskManager : MonoBehaviour
     public TaskPanel taskPanel;
     public SpecialNPCData data;
 
-    private bool wasSpacePressed = false;
+    private bool wasFPressed = false;
     private bool playerInTrigger = false;
     private bool isPanelShown = false;
 
@@ -45,8 +45,8 @@ public class TaskManager : MonoBehaviour
     {
         if (!playerInTrigger) return;
 
-        bool isSpaceDown = Input.GetKey(KeyCode.Space);
-        if (isSpaceDown && !wasSpacePressed)
+        bool isFDown = Input.GetKey(KeyCode.F);
+        if (isFDown && !wasFPressed)
         {
             if (!isPanelShown)
             {
@@ -59,7 +59,7 @@ public class TaskManager : MonoBehaviour
                 isPanelShown = false;
             }
         }
-        wasSpacePressed = isSpaceDown;
+        wasFPressed = isFDown;
     }
 
     private void ShowTaskPanel()

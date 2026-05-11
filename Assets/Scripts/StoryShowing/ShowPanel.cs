@@ -33,7 +33,7 @@ public class ShowPanel : MonoBehaviour
             currentPage = Mathf.Min(texts.Count - 1, currentPage + 1);
             UpdateText();
         }
-        else if (Input.GetKeyDown(KeyCode.Space))
+        else if (Input.GetKeyDown(KeyCode.F))
         {
             Hide();
         }

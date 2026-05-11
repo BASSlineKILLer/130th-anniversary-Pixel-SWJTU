@@ -12,6 +12,7 @@ public class StoryArchiveTrigger : MonoBehaviour
 
     private bool playerInTrigger = false;
     private bool panelOpen = false;
+    private bool hintDismissed = false;
 
     private void Start()
     {
@@ -36,6 +37,7 @@ public class StoryArchiveTrigger : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerInTrigger = true;
+            hintDismissed = false;
             Debug.Log("[StoryArchiveTrigger] playerInTrigger=true");
             if (hintUI != null && !panelOpen)
                 hintUI.SetActive(true);
@@ -47,6 +49,7 @@ public class StoryArchiveTrigger : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerInTrigger = false;
+            hintDismissed = false;
             if (hintUI != null)
                 hintUI.SetActive(false);
         }
@@ -56,9 +59,16 @@ public class StoryArchiveTrigger : MonoBehaviour
     {
         if (!playerInTrigger) return;
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space) && !panelOpen && !hintDismissed)
         {
-            Debug.Log($"[StoryArchiveTrigger] Space pressed, panelOpen={panelOpen}, archivePanel={(archivePanel != null)}");
+            hintDismissed = true;
+            if (hintUI != null)
+                hintUI.SetActive(false);
+        }
+
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            Debug.Log($"[StoryArchiveTrigger] F pressed, panelOpen={panelOpen}, archivePanel={(archivePanel != null)}");
             if (!panelOpen)
                 OpenArchive();
             else
@@ -94,9 +104,6 @@ public class StoryArchiveTrigger : MonoBehaviour
     {
         panelOpen = false;
         UnlockMovement();
-
-        if (hintUI != null && playerInTrigger)
-            hintUI.SetActive(true);
     }
 
     private void LockMovement()
