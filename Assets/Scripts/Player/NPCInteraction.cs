@@ -278,15 +278,23 @@ public class NPCInteraction : MonoBehaviour
         string speakerName = isNarration ? host.GetName() : line.speakerName;
 
         Sprite portrait = line.portraitOverride;
-        if (portrait == null && !isNarration)
-        {
-            var speakerNpc = SpecialNPCManager.Instance != null
-                ? SpecialNPCManager.Instance.GetByName(line.speakerName)
-                : null;
-            portrait = speakerNpc != null ? speakerNpc.GetPortrait() : host.GetPortrait();
-        }
         if (portrait == null)
-            portrait = host.GetPortrait();
+        {
+            if (isNarration)
+            {
+                portrait = host.GetPortrait();
+            }
+            else
+            {
+                var speakerNpc = SpecialNPCManager.Instance != null
+                    ? SpecialNPCManager.Instance.GetByName(line.speakerName)
+                    : null;
+                if (speakerNpc != null)
+                    portrait = speakerNpc.GetPortrait();
+                else
+                    Debug.LogWarning($"[NPCInteraction] 群体剧情：找不到说话者 \"{line.speakerName}\"，请检查 speakerName 是否与场景中的 SpecialNPCEntry.npcName 完全一致。立绘将留空。");
+            }
+        }
 
         SetPortrait(portrait);
         SetName(speakerName);
@@ -340,7 +348,15 @@ public class NPCInteraction : MonoBehaviour
         if (MedalManager.Instance != null && script != null && script.medalNpcIds != null)
         {
             foreach (string id in script.medalNpcIds)
-                MedalManager.Instance.TryAddMedal(id);
+            {
+                bool isFirst = MedalManager.Instance.TryAddMedal(id);
+                if (isFirst && MedalManager.Instance.data != null && MedalManager.Instance.data.IsSpecialNPC(id))
+                {
+                    string panelText = MedalManager.Instance.GetPanelText(id);
+                    if (!string.IsNullOrEmpty(panelText) && MedalManager.Instance.npcPanelComponent != null)
+                        StartCoroutine(MedalManager.Instance.npcPanelComponent.ShowPanelWithFade(panelText));
+                }
+            }
         }
     }
 

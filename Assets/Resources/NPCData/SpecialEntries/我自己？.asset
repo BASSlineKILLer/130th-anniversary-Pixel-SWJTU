@@ -35,6 +35,6 @@ MonoBehaviour:
   - "\u4F60\u4E5F\u662F\u554A\u5B66\u957F"
   - "\u524D\u7A0B\u4F3C\u9526"
   - "\u7F8E\u597D\u7684\u660E\u5929\u7EC8\u5C06\u5230\u6765"
-  repeatable: 1
+  repeatable: 0
   groupScript: {fileID: 0}
   isEasterEgg: 1

@@ -55651,13 +55651,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1499823464}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: -1, z: 0, w: 0}
   m_LocalPosition: {x: -62.48, y: 87.99, z: 0}
   m_LocalScale: {x: -1.5, y: 1.5, z: 1.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 478002455}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -180, z: 0}
 --- !u!70 &1499823466
 CapsuleCollider2D:
   m_ObjectHideFlags: 0
@@ -55738,6 +55738,7 @@ MonoBehaviour:
   solidColliderRadius: 0.15
   solidColliderFootOffsetY: 0.1
   specialData: {fileID: 11400000, guid: 5d83e5ec65280ab4396f952a95ae2c8a, type: 2}
+  faceLeft: 0
   npcPrefab: {fileID: 8558224348558117790, guid: d3ab59d16a2aeca4da12dcd474b23997, type: 3}
 --- !u!61 &1499823469
 BoxCollider2D:
@@ -56009,13 +56010,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1616097859}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: -1, z: 0, w: 0}
   m_LocalPosition: {x: -61.834, y: 88.249, z: 0}
   m_LocalScale: {x: -1.5, y: 1.5, z: 1.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 478002455}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: -180, z: 0}
 --- !u!114 &1616097861
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -56034,6 +56035,7 @@ MonoBehaviour:
   solidColliderRadius: 0.15
   solidColliderFootOffsetY: 0.1
   specialData: {fileID: 11400000, guid: 1d9aed2fafb57514c8d8fe3cda24cc10, type: 2}
+  faceLeft: 0
   npcPrefab: {fileID: 8558224348558117790, guid: d3ab59d16a2aeca4da12dcd474b23997, type: 3}
 --- !u!50 &1616097862
 Rigidbody2D:
@@ -63034,6 +63036,7 @@ MonoBehaviour:
   solidColliderRadius: 0.15
   solidColliderFootOffsetY: 0.1
   specialData: {fileID: 11400000, guid: 424cf818239339b489d3ae9f0e79542c, type: 2}
+  faceLeft: 0
   npcPrefab: {fileID: 8558224348558117790, guid: d3ab59d16a2aeca4da12dcd474b23997, type: 3}
 --- !u!50 &2056860339
 Rigidbody2D:

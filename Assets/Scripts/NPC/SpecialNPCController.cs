@@ -32,6 +32,10 @@ public class SpecialNPCController : NPCController
     /// <summary>该特殊NPC对话是否已完成（用于不可重复对话）</summary>
     private bool dialogueCompleted = false;
 
+    [Header("朝向")]
+    [Tooltip("勾选后 NPC 朝左（镜像 Sprite）；气泡自动补偿，不受影响。不要用 Transform Scale 翻转。")]
+    public bool faceLeft = false;
+
     [Header("NPC 预制体引用")]
     [Tooltip("拖入普通 NPC 预制体（Resources/NPCData/NPC），脚本将自动提取其中的 Bubble 子物体")]
     public GameObject npcPrefab;
@@ -77,6 +81,25 @@ public class SpecialNPCController : NPCController
         if (walk != null)
         {
             walk.enabled = false;
+        }
+
+        ApplyFacing();
+    }
+
+    /// <summary>
+    /// 用 SpriteRenderer.flipX 控制朝向，避免 Transform Scale 翻转连带镜像气泡。
+    /// 气泡的 localPosition.x 做反向补偿，保持始终在头顶正上方。
+    /// </summary>
+    private void ApplyFacing()
+    {
+        var sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
+            sr.flipX = faceLeft;
+
+        if (bubbleRoot != null)
+        {
+            var pos = bubbleRoot.transform.localPosition;
+            bubbleRoot.transform.localPosition = new Vector3(faceLeft ? -Mathf.Abs(pos.x) : Mathf.Abs(pos.x), pos.y, pos.z);
         }
     }
 
