@@ -13,7 +13,7 @@ public class NpcSearch : MonoBehaviour
 
 #if UNITY_WEBGL && !UNITY_EDITOR
     [DllImport("__Internal")]
-    private static extern void WebGLInputBridge_Show(string objectName, string methodName, string initialText);
+    private static extern void WebGLInputBridge_Show(string objectName, string methodName, string closeMethodName, string initialText);
 
     [DllImport("__Internal")]
     private static extern void WebGLInputBridge_Hide();
@@ -239,11 +239,16 @@ public class NpcSearch : MonoBehaviour
         OnSearchInputChanged(value);
     }
 
+    public void OnWebGLSearchClose(string _)
+    {
+        ClosePanel();
+    }
+
     private void ShowWebGLInputBridge()
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
         WebGLInput.captureAllKeyboardInput = false;
-        WebGLInputBridge_Show(gameObject.name, nameof(OnWebGLSearchInputChanged), searchInput != null ? searchInput.text : string.Empty);
+        WebGLInputBridge_Show(gameObject.name, nameof(OnWebGLSearchInputChanged), nameof(OnWebGLSearchClose), searchInput != null ? searchInput.text : string.Empty);
 #endif
     }
 
@@ -468,6 +473,12 @@ public class NpcSearch : MonoBehaviour
         }
 
         ShowHint($"无法定位 NPC: {npc.Username}");
+    }
+
+    public static void ForceClose()
+    {
+        var instance = FindObjectOfType<NpcSearch>();
+        instance?.ClosePanel();
     }
 
     private void ClosePanel()
