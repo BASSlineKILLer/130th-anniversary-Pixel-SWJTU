@@ -98,16 +98,8 @@ public class SceneTeleportList : MonoBehaviour
 
     private void Teleport(SceneTeleportListConfig.Entry entry)
     {
-        // 关面板
-        if (panel != null)
-        {
-            panel.SetActive(false);
-        }
-        else
-        {
-            gameObject.SetActive(false); // 如果没配panel，关闭自身
-        }
-            
+        NpcSearch.ForceClose();
+
         // 传送到目标场景
         if (SceneTransitionManager.Instance != null)
         {

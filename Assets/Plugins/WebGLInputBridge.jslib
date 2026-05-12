@@ -1,7 +1,8 @@
 mergeInto(LibraryManager.library, {
-  WebGLInputBridge_Show: function (objectNamePtr, methodNamePtr, initialTextPtr) {
+  WebGLInputBridge_Show: function (objectNamePtr, methodNamePtr, closeMethodNamePtr, initialTextPtr) {
     var objectName = UTF8ToString(objectNamePtr);
     var methodName = UTF8ToString(methodNamePtr);
+    var closeMethodName = UTF8ToString(closeMethodNamePtr || 0);
     var initialText = UTF8ToString(initialTextPtr || 0);
     var inputId = 'unity-webgl-ime-input';
     var input = document.getElementById(inputId);
@@ -49,7 +50,12 @@ mergeInto(LibraryManager.library, {
       sendToUnity(input.value);
     };
     input.onkeydown = function (event) {
-      if (event.key === 'Escape') input.blur();
+      if (event.key !== 'Escape') return;
+      input.style.display = 'none';
+      input.blur();
+      if (closeMethodName && typeof unityInstance !== 'undefined' && unityInstance) {
+        unityInstance.SendMessage(objectName, closeMethodName, '');
+      }
     };
     setTimeout(function () {
       input.focus();
