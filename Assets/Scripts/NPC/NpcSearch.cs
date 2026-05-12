@@ -52,6 +52,7 @@ public class NpcSearch : MonoBehaviour
 
     private bool isInRange = false;
     private bool isSearching = false;
+    private bool isTeleportOpen = false;
     private Transform playerTransform;
     private readonly List<GameObject> candidateCardInstances = new List<GameObject>();
 
@@ -182,12 +183,18 @@ public class NpcSearch : MonoBehaviour
 
     void Update()
     {
-        if (isSearching && Input.GetKeyDown(KeyCode.F))
+        if (!Input.GetKeyDown(KeyCode.F)) return;
+
+        if (isSearching)
         {
             if (searchInput != null && searchInput.isFocused) return;
             ClosePanel();
         }
-        else if (isInRange && Input.GetKeyDown(KeyCode.F))
+        else if (isTeleportOpen)
+        {
+            CloseTeleportList();
+        }
+        else if (isInRange)
         {
             if (MedalManager.Instance != null)
             {
@@ -272,7 +279,7 @@ public class NpcSearch : MonoBehaviour
         if (teleportListPanel != null)
         {
             teleportListPanel.gameObject.SetActive(true);
-            isSearching = true;
+            isTeleportOpen = true;
             GameManager.Instance?.SetDialogueLock(true);
         }
         else
@@ -471,6 +478,14 @@ public class NpcSearch : MonoBehaviour
         HideWebGLInputBridge();
         ClearCandidateCards();
         isSearching = false;
+        isTeleportOpen = false;
+        GameManager.Instance?.SetDialogueLock(false);
+    }
+
+    private void CloseTeleportList()
+    {
+        if (teleportListPanel != null) teleportListPanel.gameObject.SetActive(false);
+        isTeleportOpen = false;
         GameManager.Instance?.SetDialogueLock(false);
     }
 
