@@ -19111,6 +19111,7 @@ MonoBehaviour:
   solidColliderRadius: 0.15
   solidColliderFootOffsetY: 0.1
   specialData: {fileID: 11400000, guid: 02d20fc08f1f5b94f869864a11e62c86, type: 2}
+  faceLeft: 0
   npcPrefab: {fileID: 8558224348558117790, guid: d3ab59d16a2aeca4da12dcd474b23997, type: 3}
 --- !u!61 &422575415
 BoxCollider2D:
@@ -23614,7 +23615,7 @@ MonoBehaviour:
   searchPanel: {fileID: 0}
   errorPanel: {fileID: 0}
   errorText: {fileID: 0}
-  candidateContainer: {fileID: 0}
+  candidateContainer: {fileID: 2100585021}
   npcCardPrefab: {fileID: 5283543223560768500, guid: 30e8bfa2f80e5c94983e32eba6cfd1b0, type: 3}
   teleportListPanel: {fileID: 0}
   searchNodeId: NpcSearch
@@ -68134,6 +68135,18 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2148890639725999788, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2148890639725999788, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2148890639725999788, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7425277629178262905, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
       propertyPath: m_Name
       value: SearchCanvas
@@ -68146,6 +68159,11 @@ PrefabInstance:
 --- !u!224 &2100585020 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 164228336558928252, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+  m_PrefabInstance: {fileID: 2100585019}
+  m_PrefabAsset: {fileID: 0}
+--- !u!224 &2100585021 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1942651141374232100, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
   m_PrefabInstance: {fileID: 2100585019}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &2140189908

@@ -16394,7 +16394,7 @@ MonoBehaviour:
   searchPanel: {fileID: 0}
   errorPanel: {fileID: 0}
   errorText: {fileID: 2100585022}
-  candidateContainer: {fileID: 0}
+  candidateContainer: {fileID: 2100585023}
   npcCardPrefab: {fileID: 5283543223560768500, guid: 30e8bfa2f80e5c94983e32eba6cfd1b0, type: 3}
   teleportListPanel: {fileID: 2100585021}
   searchNodeId: NpcSearch
@@ -63281,9 +63281,37 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2148890639725999788, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2148890639725999788, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2148890639725999788, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7425277629178262905, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
       propertyPath: m_Name
       value: SearchCanvas
+      objectReference: {fileID: 0}
+    - target: {fileID: 7425277629178262905, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9081791665566965456, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9081791665566965456, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9081791665566965456, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -63317,6 +63345,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!224 &2100585023 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1942651141374232100, guid: c1fefcce2e22f08469166ab42e83808b, type: 3}
+  m_PrefabInstance: {fileID: 2100585019}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2140189908
 GameObject:
   m_ObjectHideFlags: 0
