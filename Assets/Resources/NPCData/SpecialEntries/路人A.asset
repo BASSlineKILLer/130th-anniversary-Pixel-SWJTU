@@ -12,11 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b6a0e83dfb259a4fa3adfa93dabfb9a, type: 3}
   m_Name: "\u8DEF\u4EBAA"
   m_EditorClassIdentifier: 
-  npcName: 
+  npcName: "\u70ED\u7231\u7F8E\u98DF\u7684\u5B66\u751F"
   worldSprite: {fileID: 21300000, guid: 796dd07cf69b7fe4e8182b4f7846c1b8, type: 3}
   portrait: {fileID: 21300000, guid: 796dd07cf69b7fe4e8182b4f7846c1b8, type: 3}
   dialogueLines:
   - 
-  - 
   repeatable: 1
+  groupScript: {fileID: 11400000, guid: fed959faea6be1e40b2801b97a00a703, type: 2}
   isEasterEgg: 0

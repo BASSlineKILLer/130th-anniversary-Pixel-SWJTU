@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab4ff4b353bb91e48a7afeddfa77741a, type: 3}
+  m_Name: 3
+  m_EditorClassIdentifier: 
+  scriptId: scence1_1_student
+  dialogueLines:
+  - speakerName: "\u70ED\u7231\u7F8E\u98DF\u7684\u5B66\u751F"
+    text: "\u4E4B\u524D\u5357\u533A\u90A3\u5BB6\u70E4\u9C7C\uFF0C\u6211\u771F\u998B\u4E86"
+    portraitOverride: {fileID: 21300000, guid: 796dd07cf69b7fe4e8182b4f7846c1b8, type: 3}
+  - speakerName: "\u772F\u772F\u773C\u5B66\u751F"
+    text: "\u62C6\u4E86\u5927\u534A\u5E74\u4E86\uFF0C\u4E5F\u4E0D\u77E5\u9053\u65B0\u8857\u4EC0\u4E48\u65F6\u5019\u5F00"
+    portraitOverride: {fileID: 21300000, guid: 18479520fbb5a734c898896abda8b00f, type: 3}
+  - speakerName: "\u7EFF\u5934\u53D1\u5B66\u751F"
+    text: "\u542C\u8BF4\u6821\u5E86\u7ED3\u675F\u540E\u5546\u94FA\u9646\u9646\u7EED\u7EED\u4F1A\u8FDB\u6765"
+    portraitOverride: {fileID: 21300000, guid: 11c92cb46c9ec334f8bedff3689262eb, type: 3}
+  - speakerName: "\u70ED\u7231\u7F8E\u98DF\u7684\u5B66\u751F"
+    text: "\u5F00\u4E1A\u7B2C\u4E00\u987F\u6211\u6765\u8BF7\uFF0C\u53EF\u4E0D\u8BB8\u548C\u6211\u62A2"
+    portraitOverride: {fileID: 21300000, guid: 796dd07cf69b7fe4e8182b4f7846c1b8, type: 3}
+  - speakerName: "\u7EFF\u5934\u53D1\u5B66\u751F"
+    text: "\u54C8\u54C8\u54C8\u54C8\u6CA1\u4EBA\u548C\u4F60\u62A2\uFF0C\u54B1\u4EEC\u5B66\u6821\u73AF\u5883\u4E5F\u771F\u662F\u8D8A\u6765\u8D8A\u597D\u4E86\uFF01"
+    portraitOverride: {fileID: 21300000, guid: 11c92cb46c9ec334f8bedff3689262eb, type: 3}
+  repeatable: 1
+  medalNpcIds:
+  - "\u7EFF\u5934\u53D1\u5B66\u751F"
+  - "\u8DEF\u4EBAA"
+  - "\u8DEF\u4EBAB"
