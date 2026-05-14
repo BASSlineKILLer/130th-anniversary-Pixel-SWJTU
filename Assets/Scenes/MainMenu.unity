@@ -389,6 +389,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: MedalManager
       objectReference: {fileID: 0}
+    - target: {fileID: 7503835127509226454, guid: c3d81afeb7fbcb64d8c47e0a13c4d1bd, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -819,6 +823,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PersistentManagers
       objectReference: {fileID: 0}
+    - target: {fileID: 1706034032046450923, guid: 18f2d4f3a68022443834bb283f1b580a, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3779007675488689113, guid: 18f2d4f3a68022443834bb283f1b580a, type: 3}
       propertyPath: gameSceneNames.Array.size
       value: 8
@@ -1214,6 +1222,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: MedalProgress
       objectReference: {fileID: 0}
+    - target: {fileID: 9006590566319204174, guid: 6a7b09fd4b60a4c4fae78e9757eb3887, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9051654798283950920, guid: 6a7b09fd4b60a4c4fae78e9757eb3887, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1286,9 +1302,9 @@ RectTransform:
   - {fileID: 252981385}
   m_Father: {fileID: 224494007}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 1}
-  m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -200}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 261}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &385036040
