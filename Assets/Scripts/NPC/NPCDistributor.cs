@@ -113,7 +113,7 @@ public class NPCDistributor : MonoBehaviour
             },
             onError: error =>
             {
-                Debug.LogWarning($"[NPCDistributor] API 获取失败: {error}");
+                Debug.LogWarning($"[NPCDistributor] API 获取失败，将使用本地兜底 NPC（当前 {allNPCs.Count} 个）: {error}");
                 EnsureDistributed();
             }
         );
