@@ -41,6 +41,7 @@ public class MedalProgress : MonoBehaviour
 
     private readonly List<Image> nodeIcons = new List<Image>();
     private bool nodesBuilt;
+    private int lastRebuildTotal; // 上次重建节点时的NPC总数，用于检测变化后重建
     private bool tabEnabled;   // 当前场景是否允许 Tab 切换进度条
     private Canvas rootCanvas; // 根 Canvas，用 enabled 控制可见性（兼容 Overlay 模式）
 
@@ -151,10 +152,48 @@ public class MedalProgress : MonoBehaviour
         if (config == null || progressSlider == null || MedalManager.Instance == null)
             return;
 
-        // 获取全局 NPC 总数（优先从 NPCDistributor，回退到配置值）
+        // 获取全局普通 NPC 总数（优先从 NPCDistributor，回退到配置值）
         int total = NPCDistributor.Instance != null ? NPCDistributor.Instance.TotalNPCs : 0;
         if (total == 0 && config.totalNPCs > 0)
             total = config.totalNPCs;
+
+        // 加上特殊 NPC 数量（优先从 SpecialNPCData 资产读取）
+        int specialCount = 0;
+        SpecialNPCData specialData = null;
+        
+        // 尝试从 MedalManager 获取 SpecialNPCData
+        if (MedalManager.Instance != null && MedalManager.Instance.data != null)
+        {
+            specialData = MedalManager.Instance.data;
+            Debug.Log("[MedalProgress] 从 MedalManager.Instance.data 获取 SpecialNPCData");
+        }
+        else
+        {
+            // 回退：直接加载 Resources
+            specialData = Resources.Load<SpecialNPCData>("SpecialNPC/SpecialNPCData");
+            if (specialData != null)
+                Debug.Log("[MedalProgress] 从 Resources 加载 SpecialNPCData");
+        }
+        
+        if (specialData != null && specialData.entries != null)
+        {
+            specialCount = specialData.entries.Count;
+            Debug.Log($"[MedalProgress] SpecialNPCData.entries.Count = {specialCount}");
+        }
+        else
+        {
+            Debug.LogWarning("[MedalProgress] 无法获取 SpecialNPCData，尝试使用配置值");
+        }
+        
+        // 如果资产读不到，回退到配置值
+        if (specialCount == 0 && config.totalSpecialNPCs > 0)
+        {
+            specialCount = config.totalSpecialNPCs;
+            Debug.Log($"[MedalProgress] 使用配置值 totalSpecialNPCs = {specialCount}");
+        }
+        
+        total += specialCount;
+        Debug.Log($"[MedalProgress] 最终 total = {total} (普通NPC + 特殊NPC {specialCount})");
 
         progressSlider.maxValue = total;
 
@@ -168,7 +207,9 @@ public class MedalProgress : MonoBehaviour
             progressText.text = string.Format(progressTextFormat, current, total);
         }
 
-        if (!nodesBuilt) RebuildNodes(total);
+        // 首次构建 或 NPC总数变化时重建节点图标
+        if (!nodesBuilt || lastRebuildTotal != total)
+            RebuildNodes(total);
         UpdateNodeStates(current);
     }
 
@@ -194,7 +235,8 @@ public class MedalProgress : MonoBehaviour
             var rt = iconGO.transform as RectTransform;
             if (rt != null)
             {
-                float ratio = Mathf.Clamp01((float)node.threshold / total);
+                int threshold = node.GetThreshold(total);
+                float ratio = Mathf.Clamp01((float)threshold / total);
                 // 锚点固定到容器左中，X = width * ratio；强制 sizeDelta 以兼容 prefab 可能的 stretch
                 rt.anchorMin = new Vector2(0f, 0.5f);
                 rt.anchorMax = new Vector2(0f, 0.5f);
@@ -210,12 +252,13 @@ public class MedalProgress : MonoBehaviour
             // 如果 prefab 内有 TextMeshProUGUI，自动塞入阈值文本作为副标
             var label = iconGO.GetComponentInChildren<TextMeshProUGUI>();
             if (label != null)
-                label.text = node.threshold.ToString();
+                label.text = node.GetThreshold(total).ToString();
 
             nodeIcons.Add(img);
         }
 
         nodesBuilt = true;
+        lastRebuildTotal = total;
     }
 
     private void UpdateNodeStates(int current)
@@ -224,7 +267,7 @@ public class MedalProgress : MonoBehaviour
         for (int i = 0; i < nodeIcons.Count && i < config.nodes.Count; i++)
         {
             if (nodeIcons[i] == null || config.nodes[i] == null) continue;
-            bool reached = current >= config.nodes[i].threshold;
+            bool reached = current >= config.nodes[i].GetThreshold(lastRebuildTotal);
             nodeIcons[i].color = reached ? NODE_UNLOCKED_COLOR : NODE_LOCKED_COLOR;
         }
     }

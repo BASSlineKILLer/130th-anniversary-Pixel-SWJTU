@@ -236,10 +236,13 @@ public class MedalManager : MonoBehaviour
     {
         reachedThresholds.Clear();
         if (progressConfig == null || progressConfig.nodes == null) return;
+        int totalNPCs = GetTotalNPCCount();
         foreach (var node in progressConfig.nodes)
         {
-            if (node != null && totalMedal >= node.threshold)
-                reachedThresholds.Add(node.threshold);
+            if (node == null) continue;
+            int threshold = node.GetThreshold(totalNPCs);
+            if (totalMedal >= threshold)
+                reachedThresholds.Add(threshold);
         }
     }
 
@@ -250,21 +253,103 @@ public class MedalManager : MonoBehaviour
     private void CheckNodeUnlocks()
     {
         if (progressConfig == null || progressConfig.nodes == null) return;
+        int totalNPCs = GetTotalNPCCount();
         foreach (var node in progressConfig.nodes)
         {
             if (node == null) continue;
-            if (totalMedal < node.threshold) continue;
-            if (reachedThresholds.Contains(node.threshold)) continue;
+            int threshold = node.GetThreshold(totalNPCs);
+            if (totalMedal < threshold) continue;
+            if (reachedThresholds.Contains(threshold)) continue;
 
-            reachedThresholds.Add(node.threshold);
-            Debug.Log($"[MedalManager] 节点解锁：id={node.nodeId}, threshold={node.threshold}, desc={node.unlockDescription}");
+            reachedThresholds.Add(threshold);
+            Debug.Log($"[MedalManager] 节点解锁：id={node.nodeId}, threshold={threshold}, desc={node.unlockDescription}");
 
-            if (sceneUnlockPanel != null && !string.IsNullOrEmpty(node.unlockDescription))
+            // 全收集特殊庆祝弹窗
+            if (node.isAllNPCUnlock)
+            {
+                ShowAllNPCCelebration();
+            }
+            else if (sceneUnlockPanel != null && !string.IsNullOrEmpty(node.unlockDescription))
             {
                 string msg = $"{node.unlockDescription}已解锁";
                 sceneUnlockPanel.Show(msg);
             }
         }
+    }
+
+    /// <summary>
+    /// 全收集庆祝弹窗：放大2倍、锁操作、3秒后消失（手动控制，避免SceneUnlockPanel自动隐藏）
+    /// </summary>
+    private void ShowAllNPCCelebration()
+    {
+        if (sceneUnlockPanel == null)
+        {
+            sceneUnlockPanel = FindObjectOfType<SceneUnlockPanel>(true);
+            if (sceneUnlockPanel == null)
+            {
+                Debug.LogError("[MedalManager] 找不到 SceneUnlockPanel，无法显示全收集庆祝");
+                return;
+            }
+        }
+
+        // 停止SceneUnlockPanel可能正在运行的自动隐藏协程
+        sceneUnlockPanel.StopAllCoroutines();
+
+        // 锁所有操作
+        GameManager.Instance?.SetDialogueLock(true);
+
+        // 设置消息并手动显示（不用Show()避免自动隐藏）
+        sceneUnlockPanel.SetMessage("恭喜你收集齐所有交大勋章！");
+        var cg = sceneUnlockPanel.GetComponent<CanvasGroup>();
+        if (cg != null)
+        {
+            cg.alpha = 1f;
+            cg.interactable = true;
+            cg.blocksRaycasts = true;
+        }
+
+        // 激活并放大2倍
+        var panelTransform = sceneUnlockPanel.transform;
+        panelTransform.localScale = Vector3.one * 2f;
+        sceneUnlockPanel.gameObject.SetActive(true);
+        sceneUnlockPanel.transform.SetAsLastSibling();
+
+        // 启动协程：3秒后淡出关闭
+        StartCoroutine(AllNPCCelebrationCoroutine());
+    }
+
+    private System.Collections.IEnumerator AllNPCCelebrationCoroutine()
+    {
+        // 等待3秒
+        yield return new WaitForSeconds(3f);
+
+        // 手动淡出
+        var cg = sceneUnlockPanel?.GetComponent<CanvasGroup>();
+        if (cg != null)
+        {
+            float duration = 0.3f;
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                cg.alpha = Mathf.Clamp01(1f - elapsed / duration);
+                yield return null;
+            }
+            cg.alpha = 0f;
+            cg.interactable = false;
+            cg.blocksRaycasts = false;
+        }
+
+        // 隐藏并恢复大小
+        if (sceneUnlockPanel != null)
+        {
+            sceneUnlockPanel.gameObject.SetActive(false);
+            sceneUnlockPanel.transform.localScale = Vector3.one;
+        }
+
+        // 解锁操作
+        GameManager.Instance?.SetDialogueLock(false);
+        Debug.Log("[MedalManager] 全收集庆祝弹窗关闭");
     }
 
     // ══════════════════════════════════════════════════════════
@@ -285,12 +370,38 @@ public class MedalManager : MonoBehaviour
     /// <summary>
     /// 判断某能力节点是否已解锁（当前勋章数是否达到 threshold）。
     /// 节点不存在视为未解锁（安全失败）。
+    /// 支持 isAllNPCUnlock 动态计算阈值。
     /// </summary>
     public bool IsNodeUnlocked(string nodeId)
     {
         var node = GetNode(nodeId);
         if (node == null) return false;
-        return totalMedal >= node.threshold;
+        int threshold = node.GetThreshold(GetTotalNPCCount());
+        return totalMedal >= threshold;
+    }
+
+    /// <summary>获取当前总NPC数（普通 + 特殊），用于 isAllNPCUnlock 阈值计算</summary>
+    private int GetTotalNPCCount()
+    {
+        // 优先从 NPCDistributor 获取实时普通NPC数量
+        int normalCount = 0;
+        if (NPCDistributor.Instance != null)
+            normalCount = NPCDistributor.Instance.TotalNPCs;
+        
+        // 回退：从 MedalProgress 配置读取
+        if (normalCount == 0 && MedalProgress.Instance != null && MedalProgress.Instance.config != null)
+            normalCount = MedalProgress.Instance.config.totalNPCs;
+
+        // 获取特殊NPC数量
+        int specialCount = 0;
+        if (data != null && data.entries != null)
+            specialCount = data.entries.Count;
+        else if (MedalProgress.Instance != null && MedalProgress.Instance.config != null)
+            specialCount = MedalProgress.Instance.config.totalSpecialNPCs;
+
+        int total = normalCount + specialCount;
+        Debug.Log($"[MedalManager] GetTotalNPCCount: 普通NPC={normalCount}, 特殊NPC={specialCount}, 总计={total}");
+        return total;
     }
 
     /// <summary>
@@ -302,9 +413,15 @@ public class MedalManager : MonoBehaviour
         var node = GetNode(nodeId);
         if (node == null)
         {
-            Debug.LogWarning($"[MedalManager] ShowLockedHint 找不到节点 id={nodeId}，或者 progressConfig 未配置");
+            Debug.LogWarning($"[MedalManager] 找不到节点 '{nodeId}'，无法显示锁定提示。");
             return;
         }
+        int threshold = node.GetThreshold(GetTotalNPCCount());
+        string hint = node.lockedHint;
+        if (string.IsNullOrEmpty(hint))
+            hint = $"需要 {threshold} 枚勋章才能解锁此功能";
+        else if (hint.Contains("{0}"))
+            hint = string.Format(hint, threshold);
         if (sceneUnlockPanel == null)
         {
             // Try to find it one more time dynamically when needed
@@ -315,10 +432,6 @@ public class MedalManager : MonoBehaviour
                 return;
             }
         }
-        string hint = string.IsNullOrEmpty(node.lockedHint)
-            ? $"需要 {node.threshold} 枚勋章才能解锁"
-            : string.Format(node.lockedHint, node.threshold);
-            
         sceneUnlockPanel.Show(hint);
     }
 

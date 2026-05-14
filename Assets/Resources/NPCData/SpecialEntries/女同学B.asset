@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b6a0e83dfb259a4fa3adfa93dabfb9a, type: 3}
   m_Name: "\u5973\u540C\u5B66B"
   m_EditorClassIdentifier: 
-  npcName: 
+  npcName: "\u56DE\u6BCD\u6821\u7684\u5B66\u59D0"
   worldSprite: {fileID: 21300000, guid: 23143509fef34ce4c94a7899c0407c31, type: 3}
   portrait: {fileID: 21300000, guid: 23143509fef34ce4c94a7899c0407c31, type: 3}
   dialogueLines:

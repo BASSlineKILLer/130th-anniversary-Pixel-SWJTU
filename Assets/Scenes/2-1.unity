@@ -10893,6 +10893,7 @@ Transform:
   - {fileID: 787728859}
   - {fileID: 1911634523}
   - {fileID: 228956893}
+  - {fileID: 650125262}
   m_Father: {fileID: 287841504}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &556625300
@@ -11191,6 +11192,37 @@ SpriteRenderer:
   m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &650125261
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 650125262}
+  m_Layer: 0
+  m_Name: pops (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &650125262
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 650125261}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -8.46, y: 71.04, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 550403285}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &678508627
 GameObject:
   m_ObjectHideFlags: 0
@@ -68124,7 +68156,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPoints.Array.size
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPoints.Array.data[0]
@@ -68141,7 +68173,7 @@ PrefabInstance:
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPoints.Array.data[3]
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 650125262}
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPoints.Array.data[4]
       value: 
@@ -68176,7 +68208,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPointCapacities.Array.size
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPointCapacities.Array.data[0]
@@ -68188,6 +68220,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
       propertyPath: spawnPointCapacities.Array.data[2]
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5792987825417201486, guid: f3840ad22fffc4e409e403f0dccc7d30, type: 3}
+      propertyPath: spawnPointCapacities.Array.data[3]
       value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents:

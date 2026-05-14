@@ -53,6 +53,8 @@ public class CircleWipeTransition : MonoBehaviour
     private static readonly int SoftnessProp = Shader.PropertyToID("_Softness");
     private static readonly int AspectProp = Shader.PropertyToID("_Aspect");
 
+    private bool needDontDestroyOnLoad = false;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -61,9 +63,31 @@ public class CircleWipeTransition : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+
+        // 强制脱离父级
+        if (transform.parent != null)
+        {
+            Debug.Log($"[CircleWipeTransition] 脱离父级: {transform.parent.name}");
+            transform.SetParent(null, false);
+        }
+
+        // 标记需要在 Start 中调用 DontDestroyOnLoad（延迟一帧确保生效）
+        needDontDestroyOnLoad = true;
 
         InitializeOverlay();
+    }
+
+    private void Start()
+    {
+        if (needDontDestroyOnLoad)
+        {
+            // 再次确保是根对象
+            if (transform.parent != null)
+                transform.SetParent(null, false);
+            
+            DontDestroyOnLoad(gameObject);
+            Debug.Log("[CircleWipeTransition] DontDestroyOnLoad 已应用");
+        }
     }
 
     private void OnDestroy()

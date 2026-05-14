@@ -13,19 +13,29 @@ MonoBehaviour:
   m_Name: MedalProgressConfig
   m_EditorClassIdentifier: 
   totalNPCs: 0
+  totalSpecialNPCs: 0
   nodes:
   - nodeId: Library
     threshold: 5
+    isAllNPCUnlock: 0
     unlockDescription: "\u56FE\u4E66\u9986"
     lockedHint: "\u9700\u8981\u6536\u96C6{0}\u4E2A\u52CB\u7AE0\u624D\u80FD\u524D\u5F80\u4E0B\u4E00\u4E2A\u573A\u666F"
     icon: {fileID: 21300000, guid: e045cf75b08f3fb4385facbd9dea363c, type: 3}
   - nodeId: TeleportList
     threshold: 10
+    isAllNPCUnlock: 0
     unlockDescription: "\u4F20\u9001\u529F\u80FD"
     lockedHint: "\u9700\u8981\u6536\u96C6{0}\u4E2A\u52CB\u7AE0\u624D\u80FD\u89E3\u9501\u4F20\u9001"
     icon: {fileID: 21300000, guid: ce0ff29680c4a784f864a963d9a2a592, type: 3}
   - nodeId: NpcSearch
     threshold: 20
+    isAllNPCUnlock: 0
+    unlockDescription: "\u641C\u7D22NPC"
+    lockedHint: "\u9700\u8981\u6536\u96C6{0}\u4E2A\u52CB\u7AE0\u624D\u80FD\u641C\u7D22NPC"
+    icon: {fileID: 21300000, guid: ed087b259f934eb4fb39fbe2698e938c, type: 3}
+  - nodeId: NpcSearch
+    threshold: 20
+    isAllNPCUnlock: 1
     unlockDescription: "\u641C\u7D22NPC"
     lockedHint: "\u9700\u8981\u6536\u96C6{0}\u4E2A\u52CB\u7AE0\u624D\u80FD\u641C\u7D22NPC"
     icon: {fileID: 21300000, guid: ed087b259f934eb4fb39fbe2698e938c, type: 3}
